@@ -1,37 +1,29 @@
-
 <!DOCTYPE html>
-<html>
+<html lang="es">
   <head>
-    <title>Estudio</title>
+    <meta charset="UTF-8" />
+    <title>Chat Estudio</title>
+    <link href="https://cdn.jsdelivr.net/npm/@n8n/chat/dist/style.css" rel="stylesheet" />
   </head>
   <body>
-    <h2>Iniciando estudio...</h2>
+    <script type="module">
+      import { createChat } from 'https://cdn.jsdelivr.net/npm/@n8n/chat/dist/chat.bundle.es.js';
 
-    <iframe
-      id="chat"
-      src="https://agentsol.app.n8n.cloud/chat/716ddad8-70a4-4679-8c5f-d914a53dce84"
-      width="100%"
-      height="600"
-    ></iframe>
-
-    <script>
+      // Obtener el ID del estudio desde la URL
       const params = new URLSearchParams(window.location.search);
       const estudioId = params.get("ID");
 
-      const iframe = document.getElementById("chat");
-      iframe.onload = () => {
-        if (estudioId) {
-          iframe.contentWindow.postMessage(
-            {
-              action: "user-message",
-              payload: {
-                text: `estudio:${estudioId}`
-              }
-            },
-            "*"
-          );
-        }
-      };
+      // Inicializar el chat
+      const chat = createChat({
+        webhookUrl: "https://agentsol.app.n8n.cloud/webhook/716ddad8-70a4-4679-8c5f-d914a53dce84"
+      });
+
+      // Enviar el ID del estudio como primer mensaje, si existe
+      if (estudioId) {
+        chat.then((api) => {
+          api.sendMessage(`estudio:${estudioId}`);
+        });
+      }
     </script>
   </body>
 </html>
