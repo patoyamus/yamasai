@@ -5,7 +5,7 @@
     <title>Think Nube - Entrevista AI</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <!-- CSS desde CDN -->
+    <!-- CSS del chat -->
     <link rel="stylesheet" href="https://unpkg.com/@n8n/chat@latest/style.css" />
 
     <style>
@@ -41,7 +41,7 @@
   <body>
     <div id="n8n-chat"></div>
 
-    <!-- Script embebido desde CDN -->
+    <!-- Script del widget compatible con navegador -->
     <script src="https://unpkg.com/@n8n/chat@latest/dist/embed.umd.js"></script>
     <script>
       const params = new URLSearchParams(window.location.search);
@@ -54,13 +54,13 @@
         metadata: {
           estudioID
         },
-        initialMessages: ['¡Hola! 👋 ¿Listo para empezar la entrevista?'],
         loadPreviousSession: true,
         chatSessionKey: 'sessionId',
+        initialMessages: ['¡Hola! 👋 ¿Listo para empezar la entrevista?'],
         i18n: {
           en: {
             title: 'Entrevista Think Nube',
-            subtitle: 'Estoy para ayudarte en esta charla.',
+            subtitle: 'Estoy para acompañarte en esta charla.',
             inputPlaceholder: 'Escribí tu respuesta...',
             getStarted: 'Comenzar'
           }
