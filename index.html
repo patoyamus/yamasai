@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Nube Entrevistador Web</title>
   <style>
-    /* tus estilos existentes se mantienen sin cambios */
+    /* Tus estilos originales acá... (omitidos por brevedad si ya están bien) */
   </style>
 </head>
 <body>
@@ -92,8 +92,8 @@
           body: JSON.stringify({
             message: message,
             timestamp: new Date().toISOString(),
-            sessionID: sessionID,
-            estudioID: estudioID
+            sessionID,
+            estudioID
           })
         });
 
@@ -102,14 +102,12 @@
         if (response.ok) {
           const data = await response.text();
           let botResponse;
-
           try {
             const jsonData = JSON.parse(data);
             botResponse = jsonData.message || jsonData.response || JSON.stringify(jsonData, null, 2);
           } catch {
             botResponse = data || 'Respuesta recibida correctamente';
           }
-
           addMessage(botResponse);
         } else {
           addMessage(`Error ${response.status}: ${response.statusText}`, false, true);
@@ -136,7 +134,7 @@
       }
     });
 
-    // Mostrar mensaje inicial automáticamente
+    // Mensaje de bienvenida automático
     window.addEventListener('DOMContentLoaded', () => {
       const bienvenida = `¡Hola! Soy tu entrevistador de Think Nube y vamos a charlar sobre "${descripcion}".`;
       addMessage(bienvenida, false);
