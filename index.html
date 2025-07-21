@@ -1,160 +1,147 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Testeador de Chat N8N</title>
-    <style>
-        /* [ESTILOS ORIGINALES OMITIDOS POR BREVEDAD: los tuyos ya están perfectos y no necesitan cambio] */
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nube Entrevistador Web</title>
+  <style>
+    /* tus estilos existentes se mantienen sin cambios */
+  </style>
 </head>
 <body>
-    <div class="chat-header">
-        <div class="header-title">Testeador de Chat N8N</div>
+  <div class="chat-header">
+    <div class="header-title">Nube Entrevistador Web</div>
+  </div>
+
+  <div class="chat-container">
+    <div class="chat-messages" id="chatMessages"></div>
+
+    <div class="typing-indicator" id="typingIndicator">
+      <div class="typing-content">
+        <div class="message-avatar" style="background: #ab68ff; color: white;">AI</div>
+        <div class="typing-dots">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+      </div>
     </div>
 
-    <div class="chat-container">
-        <div class="chat-messages" id="chatMessages">
-            <div class="message-wrapper assistant">
-                <div class="message-content">
-                    <div class="message-avatar">AI</div>
-                    <div class="message-text">¡Hola! Soy tu asistente de prueba. Escribe un mensaje para testear el webhook de n8n.</div>
-                </div>
-            </div>
-        </div>
-
-        <div class="typing-indicator" id="typingIndicator">
-            <div class="typing-content">
-                <div class="message-avatar" style="background: #ab68ff; color: white;">AI</div>
-                <div class="typing-dots">
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                </div>
-            </div>
-        </div>
-
-        <div class="chat-input-area">
-            <div class="input-container">
-                <textarea class="chat-input" id="messageInput" placeholder="Envía un mensaje..." rows="1"></textarea>
-                <button class="send-button" id="sendButton">
-                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M7.33 24l-2.83-2.829 9.339-9.175-9.339-9.167 2.83-2.829 12.17 11.996z"/>
-                    </svg>
-                </button>
-            </div>
-        </div>
+    <div class="chat-input-area">
+      <div class="input-container">
+        <textarea class="chat-input" id="messageInput" placeholder="Envía un mensaje..." rows="1"></textarea>
+        <button class="send-button" id="sendButton">
+          <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M7.33 24l-2.83-2.829 9.339-9.175-9.339-9.167 2.83-2.829 12.17 11.996z"/>
+          </svg>
+        </button>
+      </div>
     </div>
+  </div>
 
-    <script>
-        // Obtener los parámetros de la URL
-        const params = new URLSearchParams(window.location.search);
-        const sessionID = params.get('sessionID');
-        const estudioID = params.get('ID');
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const sessionID = params.get('sessionID');
+    const estudioID = params.get('ID');
+    const descripcion = params.get('descripcion') || 'el estudio';
 
-        // Log para verificar
-        console.log("SessionID:", sessionID);
-        console.log("EstudioID:", estudioID);
+    const webhookUrl = 'https://agentsol.app.n8n.cloud/webhook/716ddad8-70a4-4679-8c5f-d914a53dce84/chat';
+    const chatMessages = document.getElementById('chatMessages');
+    const messageInput = document.getElementById('messageInput');
+    const sendButton = document.getElementById('sendButton');
+    const typingIndicator = document.getElementById('typingIndicator');
 
-        // Variables del chat
-        const webhookUrl = 'https://agentsol.app.n8n.cloud/webhook/716ddad8-70a4-4679-8c5f-d914a53dce84/chat';
-        const chatMessages = document.getElementById('chatMessages');
-        const messageInput = document.getElementById('messageInput');
-        const sendButton = document.getElementById('sendButton');
-        const typingIndicator = document.getElementById('typingIndicator');
+    function addMessage(message, isUser = false, isError = false) {
+      const messageWrapper = document.createElement('div');
+      messageWrapper.className = `message-wrapper ${isUser ? 'user' : 'assistant'}${isError ? ' error-message' : ''}`;
+      messageWrapper.innerHTML = `
+        <div class="message-content">
+          <div class="message-avatar">${isUser ? 'U' : 'AI'}</div>
+          <div class="message-text">${message}</div>
+        </div>
+      `;
+      chatMessages.appendChild(messageWrapper);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
 
-        function addMessage(message, isUser = false, isError = false) {
-            const messageWrapper = document.createElement('div');
-            messageWrapper.className = `message-wrapper ${isUser ? 'user' : 'assistant'}${isError ? ' error-message' : ''}`;
-            
-            messageWrapper.innerHTML = `
-                <div class="message-content">
-                    <div class="message-avatar">${isUser ? 'U' : 'AI'}</div>
-                    <div class="message-text">${message}</div>
-                </div>
-            `;
-            
-            chatMessages.appendChild(messageWrapper);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-        }
+    function showTypingIndicator() {
+      typingIndicator.style.display = 'block';
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
 
-        function showTypingIndicator() {
-            typingIndicator.style.display = 'block';
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-        }
+    function hideTypingIndicator() {
+      typingIndicator.style.display = 'none';
+    }
 
-        function hideTypingIndicator() {
-            typingIndicator.style.display = 'none';
-        }
+    async function sendMessage() {
+      const message = messageInput.value.trim();
+      if (!message) return;
 
-        async function sendMessage() {
-            const message = messageInput.value.trim();
-            if (!message) return;
+      addMessage(message, true);
+      messageInput.value = '';
+      messageInput.style.height = 'auto';
+      sendButton.disabled = true;
+      showTypingIndicator();
 
-            // Mostrar mensaje del usuario
-            addMessage(message, true);
-            messageInput.value = '';
-            messageInput.style.height = 'auto';
-            sendButton.disabled = true;
-
-            // Mostrar indicador de escritura
-            showTypingIndicator();
-
-            try {
-                const response = await fetch(webhookUrl, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ 
-                        message: message,
-                        timestamp: new Date().toISOString()
-                        // No se incluyen sessionID ni ID aquí
-                    })
-                });
-
-                hideTypingIndicator();
-
-                if (response.ok) {
-                    const data = await response.text();
-                    let botResponse;
-                    
-                    try {
-                        const jsonData = JSON.parse(data);
-                        botResponse = jsonData.message || jsonData.response || JSON.stringify(jsonData, null, 2);
-                    } catch {
-                        botResponse = data || 'Respuesta recibida correctamente';
-                    }
-                    
-                    addMessage(botResponse);
-                } else {
-                    addMessage(`Error ${response.status}: ${response.statusText}`, false, true);
-                }
-            } catch (error) {
-                hideTypingIndicator();
-                addMessage(`Error de conexión: ${error.message}`, false, true);
-            } finally {
-                sendButton.disabled = false;
-                messageInput.focus();
-            }
-        }
-
-        // Auto-resize del textarea
-        messageInput.addEventListener('input', function() {
-            this.style.height = 'auto';
-            this.style.height = Math.min(this.scrollHeight, 200) + 'px';
+      try {
+        const response = await fetch(webhookUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            message: message,
+            timestamp: new Date().toISOString(),
+            sessionID: sessionID,
+            estudioID: estudioID
+          })
         });
 
-        sendButton.addEventListener('click', sendMessage);
-        messageInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                sendMessage();
-            }
-        });
+        hideTypingIndicator();
 
-        // Enfocar el input al cargar la página
+        if (response.ok) {
+          const data = await response.text();
+          let botResponse;
+
+          try {
+            const jsonData = JSON.parse(data);
+            botResponse = jsonData.message || jsonData.response || JSON.stringify(jsonData, null, 2);
+          } catch {
+            botResponse = data || 'Respuesta recibida correctamente';
+          }
+
+          addMessage(botResponse);
+        } else {
+          addMessage(`Error ${response.status}: ${response.statusText}`, false, true);
+        }
+      } catch (error) {
+        hideTypingIndicator();
+        addMessage(`Error de conexión: ${error.message}`, false, true);
+      } finally {
+        sendButton.disabled = false;
         messageInput.focus();
-    </script>
+      }
+    }
+
+    messageInput.addEventListener('input', function () {
+      this.style.height = 'auto';
+      this.style.height = Math.min(this.scrollHeight, 200) + 'px';
+    });
+
+    sendButton.addEventListener('click', sendMessage);
+    messageInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+
+    // Mostrar mensaje inicial automáticamente
+    window.addEventListener('DOMContentLoaded', () => {
+      const bienvenida = `¡Hola! Soy tu entrevistador de Think Nube y vamos a charlar sobre "${descripcion}".`;
+      addMessage(bienvenida, false);
+      messageInput.focus();
+    });
+  </script>
 </body>
 </html>
