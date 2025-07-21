@@ -1,85 +1,72 @@
 <!DOCTYPE html>
 <html lang="es">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Think Nube - Entrevista AI</title>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Think Nube - Entrevista AI</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <!-- Estilos del chat -->
-  <link rel="stylesheet" href="https://unpkg.com/@n8n/chat@latest/style.css" />
+    <!-- CSS desde CDN -->
+    <link rel="stylesheet" href="https://unpkg.com/@n8n/chat@latest/style.css" />
 
-  <style>
-    :root {
-      --chat--color-primary: #6366f1;
-      --chat--color-primary-shade-50: #5856eb;
-      --chat--color-primary-shade-100: #4f46e5;
-      --chat--color-secondary: #10b981;
-      --chat--color-white: #ffffff;
-      --chat--color-light: #ececec;
-      --chat--color-dark: #212121;
-      --chat--color-disabled: #4a4a4a;
-      --chat--color-typing: #8e8ea0;
+    <style>
+      :root {
+        --chat--color-primary: #6366f1;
+        --chat--color-secondary: #10b981;
+        --chat--color-white: #ffffff;
+        --chat--color-light: #ececec;
+        --chat--color-dark: #212121;
+        --chat--message--bot--background: #212121;
+        --chat--message--bot--color: #ececec;
+        --chat--message--user--background: #2f2f2f;
+        --chat--message--user--color: #ececec;
 
-      --chat--window--width: 100%;
-      --chat--window--height: 100%;
+        --chat--window--width: 100%;
+        --chat--window--height: 100%;
+      }
 
-      --chat--message--font-size: 15px;
-      --chat--message-line-height: 1.6;
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        background: #212121;
+      }
 
-      --chat--message--bot--background: #212121;
-      --chat--message--bot--color: #ececec;
+      #n8n-chat {
+        width: 100%;
+        height: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="n8n-chat"></div>
 
-      --chat--message--user--background: #2f2f2f;
-      --chat--message--user--color: #ececec;
-    }
+    <!-- Script embebido desde CDN -->
+    <script src="https://unpkg.com/@n8n/chat@latest/dist/embed.umd.js"></script>
+    <script>
+      const params = new URLSearchParams(window.location.search);
+      const estudioID = params.get('ID') || 'sin-id';
 
-    html, body {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      background: #212121;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-    }
-
-    #n8n-chat {
-      width: 100%;
-      height: 100%;
-    }
-  </style>
-</head>
-<body>
-  <div id="n8n-chat"></div>
-
-  <script type="module">
-    import { createChat } from 'https://unpkg.com/@n8n/chat@latest/dist/index.js?module';
-
-    // Obtener el ID desde la URL
-    const params = new URLSearchParams(window.location.search);
-    const estudioID = params.get('ID') || 'no-id';
-
-    // Inicializar el chat
-    createChat({
-      webhookUrl: 'https://agentsol.app.n8n.cloud/webhook/716ddad8-70a4-4679-8c5f-d914a53dce84/chat',
-      mode: 'fullscreen',
-      showWelcomeScreen: false,
-      chatSessionKey: 'sessionId',
-      loadPreviousSession: true,
-      metadata: {
-        estudioID: estudioID
-      },
-      initialMessages: [
-        '¡Hola! 👋 ¿Listo para empezar la entrevista?'
-      ],
-      i18n: {
-        en: {
-          title: 'Entrevista AI - Think Nube',
-          subtitle: 'Te acompaño durante toda la conversación',
-          inputPlaceholder: 'Escribí tu respuesta...',
-          getStarted: 'Comenzar',
-        }
-      },
-      defaultLanguage: 'en' // aunque pongas español, solo hay soporte en inglés por ahora
-    });
-  </script>
-</body>
+      window.createChat({
+        webhookUrl: 'https://agentsol.app.n8n.cloud/webhook/716ddad8-70a4-4679-8c5f-d914a53dce84/chat',
+        target: '#n8n-chat',
+        mode: 'fullscreen',
+        metadata: {
+          estudioID
+        },
+        initialMessages: ['¡Hola! 👋 ¿Listo para empezar la entrevista?'],
+        loadPreviousSession: true,
+        chatSessionKey: 'sessionId',
+        i18n: {
+          en: {
+            title: 'Entrevista Think Nube',
+            subtitle: 'Estoy para ayudarte en esta charla.',
+            inputPlaceholder: 'Escribí tu respuesta...',
+            getStarted: 'Comenzar'
+          }
+        },
+        defaultLanguage: 'en'
+      });
+    </script>
+  </body>
 </html>
