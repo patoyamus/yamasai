@@ -498,7 +498,7 @@ body {
       if (descripcionTexto) descripcionTexto.textContent = descripcion;
 
       setTimeout(() => {
-        const bienvenida = `¡Perfecto! Comencemos con la entrevista sobre "${descripcion}". ¿Podrías contarme un poco sobre tu experiencia en este campo?`;
+        const bienvenida = `Entrevista sobre "${descripcion}".`;
         addMessage(bienvenida);
         postToWebhook(`Inicio de entrevista: ${descripcion}`);
         messageInput.focus();
