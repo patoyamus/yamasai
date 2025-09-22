@@ -54,6 +54,20 @@
     /* Message text */
     .message-text { flex: 1; line-height: 1.6; font-size: 15px; color: #ececec; white-space: pre-wrap; word-wrap: break-word; padding-top: 1px; }
     .message-text img { max-width: 200px; border-radius: 8px; margin: 8px 0; display: block; }
+
+    /* Galería si hay varias imágenes */
+    .message-text.gallery {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 12px;
+    }
+    .message-text.gallery img {
+      width: 100%;
+      max-width: 100%;
+      border-radius: 8px;
+      display: block;
+    }
+
     .message.error .message-text { color: #fca5a5; }
 
     /* Typing indicator */
@@ -154,21 +168,26 @@
       const avatarText = isUser ? 'TÚ' : (isError ? '⚠️' : 'AI');
       const avatarClass = isUser ? 'user' : (isError ? 'error' : 'assistant');
       let displayText = text;
-      try { const parsed = JSON.parse(text); displayText = parsed.output || parsed.text || parsed.message || text; } catch {}
-      const urlRegex = /(https:\/\/[^\s]+)/g;
-if (!displayText.includes("<img")) {
-  const urlRegex = /(https:\/\/[^\s]+)/g;
-  displayText = displayText.replace(urlRegex, (url) => {
-    if (url.includes("drive.google.com") || url.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
-      return `<img src="${url}" style="max-width:200px; border-radius:8px; margin:8px 0;"/>`;
-    }
-    return `<a href="${url}" target="_blank">${url}</a>`;
-  });
-}
 
-      });
+      try { const parsed = JSON.parse(text); displayText = parsed.output || parsed.text || parsed.message || text; } catch {}
+
+      // Solo procesar links si no viene ya con <img>
+      if (!displayText.includes("<img")) {
+        const urlRegex = /(https:\/\/[^\s]+)/g;
+        displayText = displayText.replace(urlRegex, (url) => {
+          if (url.includes("drive.google.com") || url.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
+            return `<img src="${url}" />`;
+          }
+          return `<a href="${url}" target="_blank">${url}</a>`;
+        });
+      }
+
+      // Detectar si hay varias imágenes para aplicar grid
+      const isGallery = (displayText.match(/<img/g) || []).length > 1;
+      const galleryClass = isGallery ? "gallery" : "";
+
       messageDiv.className = `message ${avatarClass}`;
-      messageDiv.innerHTML = `<div class="message-content"><div class="avatar ${avatarClass}">${avatarText}</div><div class="message-text">${displayText}</div></div>`;
+      messageDiv.innerHTML = `<div class="message-content"><div class="avatar ${avatarClass}">${avatarText}</div><div class="message-text ${galleryClass}">${displayText}</div></div>`;
       messagesContainer.appendChild(messageDiv);
       messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
@@ -183,7 +202,11 @@ if (!displayText.includes("<img")) {
         const response = await fetch(webhookUrl,{method:'POST',headers:{'Content-Type':'application/json'},
           body:JSON.stringify({mensaje,timestamp:new Date().toISOString(),descripcion,sessionID,estudioID})});
         hideTypingIndicator();
-        if (response.ok) { const data = await response.text(); addMessage(data || 'Respuesta recibida correctamente'); }
+        if (response.ok) {
+          const data = await response.text();
+          console.log("🧐 Respuesta webhook:", data);
+          addMessage(data || 'Respuesta vacía del webhook');
+        }
         else throw new Error(`Error del servidor: ${response.status}`);
       } catch (error) { hideTypingIndicator(); addMessage(`Error de conexión: ${error.message}`,false,true); }
     }
