@@ -156,11 +156,16 @@
       let displayText = text;
       try { const parsed = JSON.parse(text); displayText = parsed.output || parsed.text || parsed.message || text; } catch {}
       const urlRegex = /(https:\/\/[^\s]+)/g;
-      displayText = displayText.replace(urlRegex, (url) => {
-        if (url.includes("drive.google.com") || url.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
-          return `<img src="${url}" />`;
-        }
-        return `<a href="${url}" target="_blank">${url}</a>`;
+if (!displayText.includes("<img")) {
+  const urlRegex = /(https:\/\/[^\s]+)/g;
+  displayText = displayText.replace(urlRegex, (url) => {
+    if (url.includes("drive.google.com") || url.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
+      return `<img src="${url}" style="max-width:200px; border-radius:8px; margin:8px 0;"/>`;
+    }
+    return `<a href="${url}" target="_blank">${url}</a>`;
+  });
+}
+
       });
       messageDiv.className = `message ${avatarClass}`;
       messageDiv.innerHTML = `<div class="message-content"><div class="avatar ${avatarClass}">${avatarText}</div><div class="message-text">${displayText}</div></div>`;
