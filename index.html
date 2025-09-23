@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Think Nube - Entrevista AI</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -53,19 +53,61 @@
 
     /* Message text */
     .message-text { flex: 1; line-height: 1.6; font-size: 15px; color: #ececec; white-space: pre-wrap; word-wrap: break-word; padding-top: 1px; }
-    .message-text img { max-width: 200px; border-radius: 8px; margin: 8px 0; display: block; }
 
-    /* Galería si hay varias imágenes */
+    /* Estilos mejorados para imágenes */
+    .message-text img {
+      max-width: 200px;
+      border-radius: 8px;
+      margin: 8px 0;
+      display: block;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      transition: transform 0.2s ease;
+      background: linear-gradient(90deg, #3a3a3a 25%, #4a4a4a 50%, #3a3a3a 75%);
+      background-size: 200% 100%;
+      animation: loading 1.5s infinite;
+    }
+
+    .message-text img[src] {
+      background: none;
+      animation: none;
+    }
+
+    .message-text img:hover {
+      transform: scale(1.05);
+      cursor: pointer;
+    }
+
+    /* Galería mejorada */
     .message-text.gallery {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
       gap: 12px;
+      margin-top: 8px;
     }
+
     .message-text.gallery img {
       width: 100%;
       max-width: 100%;
+      height: auto;
+      object-fit: cover;
       border-radius: 8px;
       display: block;
+    }
+
+    /* Indicador de carga para imágenes */
+    @keyframes loading {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    /* Contenedor de galería */
+    .image-gallery {
+      margin: 8px 0;
+    }
+
+    .image-gallery img {
+      display: inline-block;
+      margin: 4px;
     }
 
     .message.error .message-text { color: #fca5a5; }
@@ -88,7 +130,13 @@
     .send-button svg { width: 16px; height: 16px; }
 
     /* Responsive */
-    @media (max-width:768px) { .message-content{padding:0 16px;gap:12px;} .input-area{padding:16px;} .avatar{width:28px;height:28px;font-size:12px;} .message-text{font-size:14px;} }
+    @media (max-width:768px) { 
+      .message-content{padding:0 16px;gap:12px;} 
+      .input-area{padding:16px;} 
+      .avatar{width:28px;height:28px;font-size:12px;} 
+      .message-text{font-size:14px;} 
+      .message-text img { max-width: 150px; }
+    }
 
     /* Welcome */
     .welcome-message { max-width: 768px; margin: 40px auto; padding: 0 20px; text-align: center; }
@@ -108,17 +156,17 @@
 
   <div class="chat-container">
     <div class="messages-container" id="messages">
-      <div class="welcome-message" id="welcomeScreen">
+      <div class="welcome-message hide-welcome" id="welcomeScreen">
         <div class="welcome-title">¡Hola! 👋</div>
         <div class="welcome-subtitle">Soy tu entrevistador de Think Nube</div>
         <div class="welcome-card">
           <h3 style="margin-bottom:12px;color:#ececec;">Vamos a charlar sobre:</h3>
-          <p style="color:#8e8ea0;font-size:16px;" id="descripcionTexto">Cargando...</p>
+          <p style="color:#8e8ea0;font-size:16px;" id="descripcionTexto">Percepción de Tortas</p>
         </div>
       </div>
     </div>
 
-    <div class="typing-indicator" id="typingIndicator">
+    <div class="typing-indicator" id="typingIndicator" style="display: none;">
       <div class="message-content">
         <div class="avatar assistant">AI</div>
         <div style="display:flex;align-items:center;gap:8px;color:#8e8ea0;">
@@ -130,10 +178,10 @@
 
     <div class="input-area">
       <div class="input-container">
-        <textarea class="message-input" id="messageInput" placeholder="Escribe tu mensaje..." rows="1"></textarea>
+        <textarea class="message-input" id="messageInput" placeholder="Escribe tu mensaje..." rows="1" style="height: auto;"></textarea>
         <button class="send-button" id="sendButton">
           <svg viewBox="0 0 16 16" fill="currentColor">
-            <path d="M.5 1.163A1 1 0 0 1 1.97.28l12.868 6.837a1 1 0 0 1 0 1.766L1.969 15.72A1 1 0 0 1 .5 14.837V10.33a1 1 0 0 1 .816-.983L8.5 8 1.316 6.653A1 1 0 0 1 .5 5.67V1.163Z"/>
+            <path d="M.5 1.163A1 1 0 0 1 1.97.28l12.868 6.837a1 1 0 0 1 0 1.766L1.969 15.72A1 1 0 0 1 .5 14.837V10.33a1 1 0 0 1 .816-.983L8.5 8 1.316 6.653A1 1 0 0 1 .5 5.67V1.163Z"></path>
           </svg>
         </button>
       </div>
@@ -162,23 +210,43 @@
     const welcomeScreen = document.getElementById('welcomeScreen');
     const webhookUrl = 'https://agentsol.app.n8n.cloud/webhook/716ddad8-70a4-4679-8c5f-d914a53dce84/chat';
 
+    // Función para convertir URLs de Google Drive
+    function convertGoogleDriveUrl(url) {
+      const driveMatch = url.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
+      if (driveMatch) {
+        const fileId = driveMatch[1];
+        return `https://drive.google.com/uc?export=view&id=${fileId}`;
+      }
+      return url;
+    }
+
     function addMessage(text, isUser=false, isError=false) {
       if (welcomeScreen) welcomeScreen.classList.add('hide-welcome');
+      
       const messageDiv = document.createElement('div');
-      const avatarText = isUser ? 'TÚ' : (isError ? '⚠️' : 'AI');
+      const avatarText = isUser ? 'Tú' : (isError ? '⚠️' : 'AI');
       const avatarClass = isUser ? 'user' : (isError ? 'error' : 'assistant');
       let displayText = text;
 
-      try { const parsed = JSON.parse(text); displayText = parsed.output || parsed.text || parsed.message || text; } catch {}
+      try { 
+        const parsed = JSON.parse(text); 
+        displayText = parsed.output || parsed.text || parsed.message || text; 
+      } catch {}
 
       // Solo procesar links si no viene ya con <img>
       if (!displayText.includes("<img")) {
-        const urlRegex = /(https:\/\/[^\s]+)/g;
+        const urlRegex = /(https:\/\/[^\s<>"']+)/g;
         displayText = displayText.replace(urlRegex, (url) => {
-          if (url.includes("drive.google.com") || url.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
-            return `<img src="${url}" />`;
+          // Limpiar la URL
+          let cleanUrl = url.replace(/[),;.!?]+$/, '');
+          
+          if (cleanUrl.includes("drive.google.com")) {
+            const imageUrl = convertGoogleDriveUrl(cleanUrl);
+            return `<br><img src="${imageUrl}" style="max-width:200px; border-radius:8px; margin:8px 0;" onerror="this.onerror=null; this.style.display='none';" alt="Imagen" />`;
+          } else if (cleanUrl.match(/\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i)) {
+            return `<br><img src="${cleanUrl}" style="max-width:200px; border-radius:8px; margin:8px 0;" onerror="this.onerror=null; this.style.display='none';" alt="Imagen" />`;
           }
-          return `<a href="${url}" target="_blank">${url}</a>`;
+          return `<a href="${cleanUrl}" target="_blank">${cleanUrl}</a>`;
         });
       }
 
@@ -188,41 +256,100 @@
 
       messageDiv.className = `message ${avatarClass}`;
       messageDiv.innerHTML = `<div class="message-content"><div class="avatar ${avatarClass}">${avatarText}</div><div class="message-text ${galleryClass}">${displayText}</div></div>`;
+      
       messagesContainer.appendChild(messageDiv);
       messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      
+      // Lazy loading para imágenes
+      const images = messageDiv.querySelectorAll('img');
+      images.forEach(img => {
+        img.addEventListener('load', () => {
+          messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        });
+        
+        // Agregar evento de click para ampliar imagen
+        img.addEventListener('click', () => {
+          window.open(img.src, '_blank');
+        });
+      });
     }
 
-    function showTypingIndicator(){ typingIndicator.style.display='block'; messagesContainer.scrollTop=messagesContainer.scrollHeight; }
-    function hideTypingIndicator(){ typingIndicator.style.display='none'; }
+    function showTypingIndicator(){ 
+      typingIndicator.style.display='block'; 
+      messagesContainer.scrollTop=messagesContainer.scrollHeight; 
+    }
+    
+    function hideTypingIndicator(){ 
+      typingIndicator.style.display='none'; 
+    }
 
     async function postToWebhook(mensaje) {
       showTypingIndicator();
       if (!sessionID) await initSession();
       try {
-        const response = await fetch(webhookUrl,{method:'POST',headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({mensaje,timestamp:new Date().toISOString(),descripcion,sessionID,estudioID})});
+        const response = await fetch(webhookUrl,{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({
+            mensaje,
+            timestamp:new Date().toISOString(),
+            descripcion,
+            sessionID,
+            estudioID
+          })
+        });
         hideTypingIndicator();
         if (response.ok) {
           const data = await response.text();
-          console.log("🧐 Respuesta webhook:", data);
+          console.log("🧠 Respuesta webhook:", data);
           addMessage(data || 'Respuesta vacía del webhook');
         }
         else throw new Error(`Error del servidor: ${response.status}`);
-      } catch (error) { hideTypingIndicator(); addMessage(`Error de conexión: ${error.message}`,false,true); }
+      } catch (error) { 
+        hideTypingIndicator(); 
+        addMessage(`Error de conexión: ${error.message}`,false,true); 
+      }
     }
 
     async function sendMessage() {
-      const message = messageInput.value.trim(); if (!message) return;
-      addMessage(message,true); messageInput.value=''; messageInput.style.height='auto'; sendButton.disabled=true;
-      await postToWebhook(message); sendButton.disabled=false; messageInput.focus();
+      const message = messageInput.value.trim(); 
+      if (!message) return;
+      
+      addMessage(message,true); 
+      messageInput.value=''; 
+      messageInput.style.height='auto'; 
+      sendButton.disabled=true;
+      
+      await postToWebhook(message); 
+      sendButton.disabled=false; 
+      messageInput.focus();
     }
 
-    messageInput.addEventListener('input',function(){ this.style.height='auto'; this.style.height=Math.min(this.scrollHeight,200)+'px'; });
+    messageInput.addEventListener('input',function(){ 
+      this.style.height='auto'; 
+      this.style.height=Math.min(this.scrollHeight,200)+'px'; 
+    });
+    
     sendButton.addEventListener('click',sendMessage);
-    messageInput.addEventListener('keypress',(e)=>{ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); sendMessage(); } });
+    
+    messageInput.addEventListener('keypress',(e)=>{ 
+      if(e.key==='Enter'&&!e.shiftKey){ 
+        e.preventDefault(); 
+        sendMessage(); 
+      } 
+    });
 
-    window.addEventListener('DOMContentLoaded',()=>{ initSession(); const descripcionTexto=document.getElementById('descripcionTexto'); if(descripcionTexto) descripcionTexto.textContent=descripcion;
-      setTimeout(()=>{ const bienvenida=`Entrevista sobre "${descripcion}".`; addMessage(bienvenida); postToWebhook(`Inicio de entrevista: ${descripcion}`); messageInput.focus(); },3000);
+    window.addEventListener('DOMContentLoaded',()=>{ 
+      initSession(); 
+      const descripcionTexto=document.getElementById('descripcionTexto'); 
+      if(descripcionTexto) descripcionTexto.textContent=descripcion;
+      
+      setTimeout(()=>{ 
+        const bienvenida=`Entrevista sobre "${descripcion}".`; 
+        addMessage(bienvenida); 
+        postToWebhook(`Inicio de entrevista: ${descripcion}`); 
+        messageInput.focus(); 
+      },3000);
     });
   </script>
 </body>
