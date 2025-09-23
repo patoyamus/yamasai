@@ -173,16 +173,32 @@
       } catch {}
 
       if (!displayText.includes("<img")) {
-        const urlRegex = /(https:\/\/[^\s<>"']+)/g;
-        displayText = displayText.replace(urlRegex, (url) => {
-          if (url.match(/\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i)) {
-            return `<div style="margin:16px 0; text-align:left; width:100%;">
-              <img src="${url}" style="max-width:300px; border-radius:8px; margin:12px 0; display:block;" onerror="this.onerror=null; this.style.display='none';" alt="Imagen" />
-            </div>`;
-          }
-          return `<a href="${url}" target="_blank">${url}</a>`;
-        });
-      }
+  // 1) Convertir enlaces Markdown [texto](url) primero (si los hay)
+  displayText = displayText.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, (m, text, link) => {
+    // limpiar paréntesis/puntuación sobrante
+    const cleanLink = link.replace(/[),;.!?]+$/,'');
+    if (cleanLink.match(/\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i)) {
+      return `<div style="margin:16px 0; text-align:left; width:100%;">
+                <img src="${cleanLink}" style="max-width:300px; border-radius:8px; margin:12px 0; display:block;"
+                     onerror="this.onerror=null; this.style.display='none';" alt="Imagen" />
+              </div>`;
+    }
+    return `<a href="${cleanLink}" target="_blank">${text}</a>`;
+  });
+
+  // 2) Luego buscar URLs sueltas y reemplazarlas (limpiando puntuación final)
+  const urlRegex = /(https?:\/\/[^\s<>"')]+)/g;
+  displayText = displayText.replace(urlRegex, (url) => {
+    const cleanUrl = url.replace(/[),;.!?]+$/,''); // quita paréntesis/puntuación final
+    if (cleanUrl.match(/\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i)) {
+      return `<div style="margin:16px 0; text-align:left; width:100%;">
+                <img src="${cleanUrl}" style="max-width:300px; border-radius:8px; margin:12px 0; display:block;"
+                     onerror="this.onerror=null; this.style.display='none';" alt="Imagen" />
+              </div>`;
+    }
+    return `<a href="${cleanUrl}" target="_blank">${cleanUrl}</a>`;
+  });
+}
 
       const isGallery = (displayText.match(/<img/g) || []).length > 1;
       const galleryClass = isGallery ? "gallery" : "";
