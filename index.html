@@ -220,57 +220,33 @@
       return url;
     }
 
-    function addMessage(text, isUser=false, isError=false) {
-  if (welcomeScreen) welcomeScreen.classList.add('hide-welcome');
-  
-  const messageDiv = document.createElement('div');
-  const avatarText = isUser ? 'Tú' : (isError ? '⚠️' : 'AI');
-  const avatarClass = isUser ? 'user' : (isError ? 'error' : 'assistant');
-  let displayText = text;
+    function addMessage(message) {
+  try {
+    const parsed = JSON.parse(message);
+    let displayText = parsed.output || message;
 
-  try { 
-    const parsed = JSON.parse(text); 
-    displayText = parsed.output || parsed.text || parsed.message || text; 
-  } catch {}
+    // 🔧 Reemplazar links directos a imágenes (jpg, jpeg, png, gif)
+    displayText = displayText.replace(
+      /(https?:\/\/[^\s]+?\.(jpg|jpeg|png|gif))/gi,
+      (url) => `<br><img src="${url}" style="max-width:200px; border-radius:8px; margin:8px 0;" alt="Imagen" />`
+    );
 
-  console.log('Texto recibido:', displayText);
+    // 🔧 Reemplazar también Google Drive en formato uc?export=view&id
+    displayText = displayText.replace(
+      /(https:\/\/drive\.google\.com\/uc\?export=view&id=[a-zA-Z0-9_-]+)/g,
+      (url) => `<br><img src="${url}" style="max-width:200px; border-radius:8px; margin:8px 0;" alt="Imagen de Google Drive" />`
+    );
 
-  // Buscar y reemplazar URLs específicamente de Google Drive
-  displayText = displayText.replace(/https:\/\/drive\.google\.com\/uc\?export=view&id=[a-zA-Z0-9_-]+/g, (url) => {
-    console.log('URL de Drive encontrada:', url);
-    return `<br><img src="${url}" style="max-width:200px; border-radius:8px; margin:8px 0;" alt="Imagen de Google Drive" />`;
-  });
-
-  console.log('Texto procesado:', displayText);
-
-  // Detectar si hay varias imágenes para aplicar grid
-  const isGallery = (displayText.match(/<img/g) || []).length > 1;
-  const galleryClass = isGallery ? "gallery" : "";
-
-  messageDiv.className = `message ${avatarClass}`;
-  messageDiv.innerHTML = `<div class="message-content"><div class="avatar ${avatarClass}">${avatarText}</div><div class="message-text ${galleryClass}">${displayText}</div></div>`;
-  
-  messagesContainer.appendChild(messageDiv);
-  messagesContainer.scrollTop = messagesContainer.scrollHeight;
-  
-  // Eventos para imágenes
-  const images = messageDiv.querySelectorAll('img');
-  images.forEach(img => {
-    img.addEventListener('load', () => {
-      messagesContainer.scrollTop = messagesContainer.scrollHeight;
-      console.log('Imagen cargada exitosamente');
-    });
-    
-    img.addEventListener('error', () => {
-      console.log('Error cargando imagen:', img.src);
-    });
-    
-    img.addEventListener('click', () => {
-      window.open(img.src, '_blank');
-    });
-  });
+    const chatDiv = document.getElementById('chat');
+    const msg = document.createElement('div');
+    msg.classList.add('message', 'ai');
+    msg.innerHTML = displayText;
+    chatDiv.appendChild(msg);
+    chatDiv.scrollTop = chatDiv.scrollHeight;
+  } catch (e) {
+    console.error("Error al agregar mensaje:", e, message);
+  }
 }
-
     function showTypingIndicator(){ 
       typingIndicator.style.display='block'; 
       messagesContainer.scrollTop=messagesContainer.scrollHeight; 
