@@ -1,7 +1,7 @@
 <!DOCTYPE html>
-<!-- saved from url=(0109)https://yamasai.vercel.app/?ID=f12cbdec-8503-441d-9d57-32171092481d&descripcion=Percepci%C3%B3n%20de%20Tortas -->
-<html lang="es"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-  
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Think Nube - Entrevista AI</title>
   <style>
@@ -17,7 +17,6 @@
       overflow: hidden;
     }
 
-    /* Header */
     .chat-header {
       background-color: #2f2f2f;
       padding: 12px 20px;
@@ -31,42 +30,32 @@
     .header-title { font-size: 16px; font-weight: 600; color: #ececec; }
     .header-subtitle { font-size: 14px; color: #8e8ea0; margin-left: 8px; }
 
-    /* Chat container */
     .chat-container { flex: 1; display: flex; flex-direction: column; height: calc(100vh - 60px); }
     .messages-container { flex: 1; overflow-y: auto; padding: 20px 0; scroll-behavior: smooth; }
     .messages-container::-webkit-scrollbar { width: 4px; }
     .messages-container::-webkit-scrollbar-thumb { background: #4a4a4a; border-radius: 2px; }
 
-    /* Messages */
     .message { margin: 0; padding: 24px 0; border-bottom: 1px solid rgba(255,255,255,0.1); }
     .message-content { max-width: 768px; margin: 0 auto; padding: 0 20px; display: flex; gap: 16px; align-items: flex-start; }
     .message.user { background-color: #2f2f2f; }
     .message.assistant { background-color: #212121; }
     .message.error { background-color: #3a1f1f; border-left: 4px solid #ef4444; }
 
-    /* Avatar */
     .avatar { width: 32px; height: 32px; border-radius: 4px; display: flex; align-items: center; justify-content: center;
       font-weight: 600; font-size: 14px; flex-shrink: 0; margin-top: 2px; }
     .avatar.user { background: linear-gradient(135deg, #10b981, #059669); color: white; }
     .avatar.assistant { background: linear-gradient(135deg, #6366f1, #4f46e5); color: white; }
     .avatar.error { background: #ef4444; color: white; }
 
-    /* Message text */
     .message-text { flex: 1; line-height: 1.6; font-size: 15px; color: #ececec; white-space: pre-wrap; word-wrap: break-word; padding-top: 1px; }
 
-    /* Estilos mejorados para imágenes */
     .message-text img {
-  max-width: 300px;   /* antes 200px */
-  border-radius: 8px;
-  margin: 12px 0;
-  display: block;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-  transition: transform 0.2s ease;
-}
-
-    .message-text img[src] {
-      background: none;
-      animation: none;
+      max-width: 300px;
+      border-radius: 8px;
+      margin: 12px 0;
+      display: block;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      transition: transform 0.2s ease;
     }
 
     .message-text img:hover {
@@ -74,7 +63,6 @@
       cursor: pointer;
     }
 
-    /* Galería mejorada */
     .message-text.gallery {
       display: block;
       grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
@@ -82,34 +70,11 @@
       margin-top: 8px;
     }
 
-    .message-text.gallery img {
-      width: 100%;
-      max-width: 100%;
-      height: auto;
-      object-fit: cover;
-      border-radius: 8px;
-      display: block;
-    }
-
-    /* Indicador de carga para imágenes */
-    @keyframes loading {
-      0% { background-position: 200% 0; }
-      100% { background-position: -200% 0; }
-    }
-
-    /* Contenedor de galería */
-    .image-gallery {
-      margin: 8px 0;
-    }
-
-    .image-gallery img {
-      display: inline-block;
-      margin: 4px;
-    }
+    .image-gallery { margin: 8px 0; }
+    .image-gallery img { display: inline-block; margin: 4px; }
 
     .message.error .message-text { color: #fca5a5; }
 
-    /* Typing indicator */
     .typing-indicator { display: none; align-items: center; gap: 8px; padding: 16px 0; }
     .typing-dots { display: flex; gap: 4px; }
     .typing-dot { width: 8px; height: 8px; border-radius: 50%; background-color: #8e8ea0; animation: typing 1.5s infinite ease-in-out; }
@@ -117,7 +82,6 @@
     .typing-dot:nth-child(3) { animation-delay: 0.4s; }
     @keyframes typing { 0%,60%,100% {opacity:0.3;transform:scale(0.8);} 30% {opacity:1;transform:scale(1);} }
 
-    /* Input */
     .input-area { padding: 20px; background-color: #212121; border-top: 1px solid #4a4a4a; }
     .input-container { max-width: 768px; margin: 0 auto; position: relative; background-color: #2f2f2f; border: 1px solid #4a4a4a; border-radius: 12px; padding: 12px 52px 12px 16px; }
     .message-input { width: 100%; background: transparent; border: none; outline: none; color: #ececec; font-size: 15px; resize: none; min-height: 24px; max-height: 200px; font-family: inherit; }
@@ -126,7 +90,6 @@
     .send-button:disabled { background: #4a4a4a; cursor: not-allowed; transform: translateY(-50%); }
     .send-button svg { width: 16px; height: 16px; }
 
-    /* Responsive */
     @media (max-width:768px) { 
       .message-content{padding:0 16px;gap:12px;} 
       .input-area{padding:16px;} 
@@ -135,7 +98,6 @@
       .message-text img { max-width: 150px; }
     }
 
-    /* Welcome */
     .welcome-message { max-width: 768px; margin: 40px auto; padding: 0 20px; text-align: center; }
     .welcome-title { font-size: 32px; font-weight: 600; color: #ececec; margin-bottom: 16px; }
     .welcome-subtitle { font-size: 18px; color: #8e8ea0; margin-bottom: 32px; }
@@ -153,27 +115,8 @@
 
   <div class="chat-container">
     <div class="messages-container" id="messages">
-      <div class="welcome-message hide-welcome" id="welcomeScreen">
-        <div class="welcome-title">¡Hola! 👋</div>
-        <div class="welcome-subtitle">Soy tu entrevistador de Think Nube</div>
-        <div class="welcome-card">
-          <h3 style="margin-bottom:12px;color:#ececec;">Vamos a charlar sobre:</h3>
-          <p style="color:#8e8ea0;font-size:16px;" id="descripcionTexto">Percepción de Tortas</p>
-        </div>
-      </div>
-    <div class="message assistant"><div class="message-content"><div class="avatar assistant">AI</div><div class="message-text ">Entrevista sobre "Percepción de Tortas".</div></div></div><div class="message assistant"><div class="message-content"><div class="avatar assistant">AI</div><div class="message-text ">Hola, ¿cómo estás? Desde Nube Research estamos haciendo una consulta rápida sobre Percepción de Tortas, y tu opinión sería de gran ayuda. Es breve, confidencial y puedes responder por mensaje o audio.
-
-¿Me decís tu nombre para comenzar?</div></div></div><div class="message user"><div class="message-content"><div class="avatar user">Tú</div><div class="message-text ">Patricio</div></div></div><div class="message assistant"><div class="message-content"><div class="avatar assistant">AI</div><div class="message-text ">Gracias, Patricio. ¿Me decís tu apellido?</div></div></div><div class="message user"><div class="message-content"><div class="avatar user">Tú</div><div class="message-text ">Yamus</div></div></div><div class="message assistant"><div class="message-content"><div class="avatar assistant">AI</div><div class="message-text ">¿Me pasás tu email, Patricio?</div></div></div><div class="message user"><div class="message-content"><div class="avatar user">Tú</div><div class="message-text ">pa@goog.com</div></div></div><div class="message assistant"><div class="message-content"><div class="avatar assistant">AI</div><div class="message-text ">Patricio, ¿qué tanto te interesa la repostería o la presentación de postres en general?</div></div></div><div class="message user"><div class="message-content"><div class="avatar user">Tú</div><div class="message-text ">si</div></div></div><div class="message assistant"><div class="message-content"><div class="avatar assistant">AI</div><div class="message-text ">¿Me contás tu edad, Patricio?</div></div></div><div class="message user"><div class="message-content"><div class="avatar user">Tú</div><div class="message-text ">35</div></div></div><div class="message assistant"><div class="message-content"><div class="avatar assistant">AI</div><div class="message-text ">¿Sueles visitar tiendas de repostería, participar en talleres de pastelería o asistir a eventos gastronómicos?</div></div></div><div class="message user"><div class="message-content"><div class="avatar user">Tú</div><div class="message-text ">mucho</div></div></div><div class="message assistant"><div class="message-content"><div class="avatar assistant">AI</div><div class="message-text gallery">Perfecto, Patricio. El estudio está por comenzar. 
-
-Te voy a mostrar tres imágenes de tortas y te haré algunas preguntas sobre lo que ves y tus preferencias. No lleva mucho tiempo. 
-
-Aquí van las imágenes:
-- Torta recién hecha: <br><img src="./Think Nube - Entrevista AI88_files/uc" style="max-width: 200px; border-radius: 8px; margin: 8px 0px; display: none;" onerror="this.onerror=null; this.style.display=&#39;none&#39;;" alt="Imagen">
-- Torta más elaborada: <br><img src="./Think Nube - Entrevista AI88_files/uc(1)" style="max-width: 200px; border-radius: 8px; margin: 8px 0px; display: none;" onerror="this.onerror=null; this.style.display=&#39;none&#39;;" alt="Imagen">
-- Torta sencilla: <br><img src="./Think Nube - Entrevista AI88_files/uc(2)" style="max-width: 200px; border-radius: 8px; margin: 8px 0px; display: none;" onerror="this.onerror=null; this.style.display=&#39;none&#39;;" alt="Imagen">
-
-Primera pregunta: 
-En una escala del 1 al 5, ¿cuán atractiva considerás la presentación de cada una de estas tortas? (Podés responder con un número para cada foto, en el orden que prefieras.)</div></div></div></div>
+      <!-- Sin mensajes hardcodeados -->
+    </div>
 
     <div class="typing-indicator" id="typingIndicator" style="display: none;">
       <div class="message-content">
@@ -187,7 +130,7 @@ En una escala del 1 al 5, ¿cuán atractiva considerás la presentación de cada
 
     <div class="input-area">
       <div class="input-container">
-        <textarea class="message-input" id="messageInput" placeholder="Escribe tu mensaje..." rows="1" style="height: auto;"></textarea>
+        <textarea class="message-input" id="messageInput" placeholder="Escribe tu mensaje..." rows="1"></textarea>
         <button class="send-button" id="sendButton">
           <svg viewBox="0 0 16 16" fill="currentColor">
             <path d="M.5 1.163A1 1 0 0 1 1.97.28l12.868 6.837a1 1 0 0 1 0 1.766L1.969 15.72A1 1 0 0 1 .5 14.837V10.33a1 1 0 0 1 .816-.983L8.5 8 1.316 6.653A1 1 0 0 1 .5 5.67V1.163Z"></path>
@@ -216,90 +159,47 @@ En una escala del 1 al 5, ¿cuán atractiva considerás la presentación de cada
     const messageInput = document.getElementById('messageInput');
     const sendButton = document.getElementById('sendButton');
     const typingIndicator = document.getElementById('typingIndicator');
-    const welcomeScreen = document.getElementById('welcomeScreen');
     const webhookUrl = 'https://agentsol.app.n8n.cloud/webhook/716ddad8-70a4-4679-8c5f-d914a53dce84/chat';
 
-    // Función para convertir URLs de Google Drive
-    function convertGoogleDriveUrl(url) {
-      const driveMatch = url.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
-      if (driveMatch) {
-        const fileId = driveMatch[1];
-        return `https://drive.google.com/uc?export=view&id=${fileId}`;
-      }
-      return url;
-    }
-
     function addMessage(text, isUser=false, isError=false) {
-  if (welcomeScreen) welcomeScreen.classList.add('hide-welcome');
-  
-  const messageDiv = document.createElement('div');
-  const avatarText = isUser ? 'Tú' : (isError ? '⚠️' : 'AI');
-  const avatarClass = isUser ? 'user' : (isError ? 'error' : 'assistant');
-  let displayText = text;
+      const messageDiv = document.createElement('div');
+      const avatarText = isUser ? 'Tú' : (isError ? '⚠️' : 'AI');
+      const avatarClass = isUser ? 'user' : (isError ? 'error' : 'assistant');
+      let displayText = text;
 
-  try { 
-    const parsed = JSON.parse(text); 
-    displayText = parsed.output || parsed.text || parsed.message || text; 
-  } catch {}
+      try { 
+        const parsed = JSON.parse(text); 
+        displayText = parsed.output || parsed.text || parsed.message || text; 
+      } catch {}
 
-  // Solo procesar links si no viene ya con <img>
-  if (!displayText.includes("<img")) {
-    const urlRegex = /(https:\/\/[^\s<>"']+)/g;
-    displayText = displayText.replace(urlRegex, (url) => {
-      let cleanUrl = url.replace(/[),;.!?]+$/, ''); // limpia caracteres sueltos
-
-      // Si es imagen (jpg, jpeg, png, gif, webp, bmp, svg)
-      if (cleanUrl.match(/\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i)) {
-        return `
-          <div style="margin:16px 0; text-align:left; width:100%;">
-            <img src="${cleanUrl}" 
-                 style="max-width:300px; border-radius:8px; margin:12px 0; display:block;"
-                 onerror="this.onerror=null; this.style.display='none';" 
-                 alt="Imagen" />
-          </div>`;
+      if (!displayText.includes("<img")) {
+        const urlRegex = /(https:\/\/[^\s<>"']+)/g;
+        displayText = displayText.replace(urlRegex, (url) => {
+          if (url.match(/\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i)) {
+            return `<div style="margin:16px 0; text-align:left; width:100%;">
+              <img src="${url}" style="max-width:300px; border-radius:8px; margin:12px 0; display:block;" onerror="this.onerror=null; this.style.display='none';" alt="Imagen" />
+            </div>`;
+          }
+          return `<a href="${url}" target="_blank">${url}</a>`;
+        });
       }
 
-      // Si no es imagen → link clickeable
-      return `<a href="${cleanUrl}" target="_blank">${cleanUrl}</a>`;
-    });
-  }
+      const isGallery = (displayText.match(/<img/g) || []).length > 1;
+      const galleryClass = isGallery ? "gallery" : "";
 
-  // Detectar si hay varias imágenes
-  const isGallery = (displayText.match(/<img/g) || []).length > 1;
-  const galleryClass = isGallery ? "gallery" : "";
+      messageDiv.className = `message ${avatarClass}`;
+      messageDiv.innerHTML = `
+        <div class="message-content" style="flex-direction: column; align-items: flex-start;">
+          <div class="avatar ${avatarClass}">${avatarText}</div>
+          <div class="message-text ${galleryClass}" style="width:100%;">${displayText}</div>
+        </div>`;
 
-  messageDiv.className = `message ${avatarClass}`;
-  messageDiv.innerHTML = `
-    <div class="message-content" style="flex-direction: column; align-items: flex-start;">
-      <div class="avatar ${avatarClass}">${avatarText}</div>
-      <div class="message-text ${galleryClass}" style="width:100%;">${displayText}</div>
-    </div>`;
-
-  messagesContainer.appendChild(messageDiv);
-  messagesContainer.scrollTop = messagesContainer.scrollHeight;
-
-  // Eventos para imágenes
-  const images = messageDiv.querySelectorAll('img');
-  images.forEach(img => {
-    img.addEventListener('load', () => {
+      messagesContainer.appendChild(messageDiv);
       messagesContainer.scrollTop = messagesContainer.scrollHeight;
-    });
-    img.addEventListener('click', () => {
-      window.open(img.src, '_blank');
-    });
-  });
-}
-
-
-    
-    function showTypingIndicator(){ 
-      typingIndicator.style.display='block'; 
-      messagesContainer.scrollTop=messagesContainer.scrollHeight; 
     }
-    
-    function hideTypingIndicator(){ 
-      typingIndicator.style.display='none'; 
-    }
+
+    function showTypingIndicator(){ typingIndicator.style.display='block'; }
+    function hideTypingIndicator(){ typingIndicator.style.display='none'; }
 
     async function postToWebhook(mensaje) {
       showTypingIndicator();
@@ -319,7 +219,6 @@ En una escala del 1 al 5, ¿cuán atractiva considerás la presentación de cada
         hideTypingIndicator();
         if (response.ok) {
           const data = await response.text();
-          console.log("🧠 Respuesta webhook:", data);
           addMessage(data || 'Respuesta vacía del webhook');
         }
         else throw new Error(`Error del servidor: ${response.status}`);
@@ -332,44 +231,22 @@ En una escala del 1 al 5, ¿cuán atractiva considerás la presentación de cada
     async function sendMessage() {
       const message = messageInput.value.trim(); 
       if (!message) return;
-      
       addMessage(message,true); 
       messageInput.value=''; 
-      messageInput.style.height='auto'; 
-      sendButton.disabled=true;
-      
       await postToWebhook(message); 
-      sendButton.disabled=false; 
-      messageInput.focus();
     }
 
-    messageInput.addEventListener('input',function(){ 
-      this.style.height='auto'; 
-      this.style.height=Math.min(this.scrollHeight,200)+'px'; 
-    });
-    
     sendButton.addEventListener('click',sendMessage);
-    
-    messageInput.addEventListener('keypress',(e)=>{ 
-      if(e.key==='Enter'&&!e.shiftKey){ 
-        e.preventDefault(); 
-        sendMessage(); 
-      } 
-    });
+    messageInput.addEventListener('keypress',(e)=>{ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); sendMessage(); }});
 
     window.addEventListener('DOMContentLoaded',()=>{ 
       initSession(); 
-      const descripcionTexto=document.getElementById('descripcionTexto'); 
-      if(descripcionTexto) descripcionTexto.textContent=descripcion;
-      
       setTimeout(()=>{ 
         const bienvenida=`Entrevista sobre "${descripcion}".`; 
         addMessage(bienvenida); 
         postToWebhook(`Inicio de entrevista: ${descripcion}`); 
-        messageInput.focus(); 
       },3000);
     });
   </script>
-
-
-</body></html>
+</body>
+</html>
