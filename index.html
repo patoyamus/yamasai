@@ -56,16 +56,13 @@
 
     /* Estilos mejorados para imágenes */
     .message-text img {
-      max-width: 200px;
-      border-radius: 8px;
-      margin: 8px 0;
-      display: block;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-      transition: transform 0.2s ease;
-      background: linear-gradient(90deg, #3a3a3a 25%, #4a4a4a 50%, #3a3a3a 75%);
-      background-size: 200% 100%;
-      animation: loading 1.5s infinite;
-    }
+  max-width: 300px;   /* antes 200px */
+  border-radius: 8px;
+  margin: 12px 0;
+  display: block;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  transition: transform 0.2s ease;
+}
 
     .message-text img[src] {
       background: none;
@@ -79,7 +76,7 @@
 
     /* Galería mejorada */
     .message-text.gallery {
-      display: grid;
+      display: block;
       grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
       gap: 12px;
       margin-top: 8px;
@@ -231,8 +228,8 @@ En una escala del 1 al 5, ¿cuán atractiva considerás la presentación de cada
       }
       return url;
     }
-    
-function addMessage(text, isUser=false, isError=false) {
+
+    function addMessage(text, isUser=false, isError=false) {
   if (welcomeScreen) welcomeScreen.classList.add('hide-welcome');
   
   const messageDiv = document.createElement('div');
@@ -250,33 +247,38 @@ function addMessage(text, isUser=false, isError=false) {
     const urlRegex = /(https:\/\/[^\s<>"']+)/g;
     displayText = displayText.replace(urlRegex, (url) => {
       let cleanUrl = url.replace(/[),;.!?]+$/, ''); // limpia caracteres sueltos
-      
-      // Si es imagen (jpg, jpeg, png, gif, webp, bmp, svg) → mostrar como <img>
+
+      // Si es imagen (jpg, jpeg, png, gif, webp, bmp, svg)
       if (cleanUrl.match(/\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i)) {
-        return `<br><img src="${cleanUrl}" style="max-width:200px; border-radius:8px; margin:8px 0;" 
-                 onerror="this.onerror=null; this.style.display='none';" alt="Imagen" />`;
+        return `
+          <div style="margin:16px 0; text-align:left; width:100%;">
+            <img src="${cleanUrl}" 
+                 style="max-width:300px; border-radius:8px; margin:12px 0; display:block;"
+                 onerror="this.onerror=null; this.style.display='none';" 
+                 alt="Imagen" />
+          </div>`;
       }
-      
-      // Si no es imagen, dejar link clickeable
+
+      // Si no es imagen → link clickeable
       return `<a href="${cleanUrl}" target="_blank">${cleanUrl}</a>`;
     });
   }
 
-  // Detectar si hay varias imágenes → aplicar grid
+  // Detectar si hay varias imágenes
   const isGallery = (displayText.match(/<img/g) || []).length > 1;
   const galleryClass = isGallery ? "gallery" : "";
 
   messageDiv.className = `message ${avatarClass}`;
   messageDiv.innerHTML = `
-    <div class="message-content">
+    <div class="message-content" style="flex-direction: column; align-items: flex-start;">
       <div class="avatar ${avatarClass}">${avatarText}</div>
-      <div class="message-text ${galleryClass}">${displayText}</div>
+      <div class="message-text ${galleryClass}" style="width:100%;">${displayText}</div>
     </div>`;
 
   messagesContainer.appendChild(messageDiv);
   messagesContainer.scrollTop = messagesContainer.scrollHeight;
 
-  // Eventos para imágenes (scroll + click)
+  // Eventos para imágenes
   const images = messageDiv.querySelectorAll('img');
   images.forEach(img => {
     img.addEventListener('load', () => {
@@ -287,6 +289,8 @@ function addMessage(text, isUser=false, isError=false) {
     });
   });
 }
+
+
     
     function showTypingIndicator(){ 
       typingIndicator.style.display='block'; 
