@@ -1,7 +1,7 @@
 <!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<!-- saved from url=(0109)https://yamasai.vercel.app/?ID=f12cbdec-8503-441d-9d57-32171092481d&descripcion=Percepci%C3%B3n%20de%20Tortas -->
+<html lang="es"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Think Nube - Entrevista AI</title>
   <style>
@@ -164,7 +164,19 @@
           <p style="color:#8e8ea0;font-size:16px;" id="descripcionTexto">Percepción de Tortas</p>
         </div>
       </div>
-    </div>
+    <div class="message assistant"><div class="message-content"><div class="avatar assistant">AI</div><div class="message-text ">Entrevista sobre "Percepción de Tortas".</div></div></div><div class="message assistant"><div class="message-content"><div class="avatar assistant">AI</div><div class="message-text ">Hola, ¿cómo estás? Desde Nube Research estamos haciendo una consulta rápida sobre Percepción de Tortas, y tu opinión sería de gran ayuda. Es breve, confidencial y puedes responder por mensaje o audio.
+
+¿Me decís tu nombre para comenzar?</div></div></div><div class="message user"><div class="message-content"><div class="avatar user">Tú</div><div class="message-text ">Patricio</div></div></div><div class="message assistant"><div class="message-content"><div class="avatar assistant">AI</div><div class="message-text ">Gracias, Patricio. ¿Me decís tu apellido?</div></div></div><div class="message user"><div class="message-content"><div class="avatar user">Tú</div><div class="message-text ">Yamus</div></div></div><div class="message assistant"><div class="message-content"><div class="avatar assistant">AI</div><div class="message-text ">¿Me pasás tu email, Patricio?</div></div></div><div class="message user"><div class="message-content"><div class="avatar user">Tú</div><div class="message-text ">pa@goog.com</div></div></div><div class="message assistant"><div class="message-content"><div class="avatar assistant">AI</div><div class="message-text ">Patricio, ¿qué tanto te interesa la repostería o la presentación de postres en general?</div></div></div><div class="message user"><div class="message-content"><div class="avatar user">Tú</div><div class="message-text ">si</div></div></div><div class="message assistant"><div class="message-content"><div class="avatar assistant">AI</div><div class="message-text ">¿Me contás tu edad, Patricio?</div></div></div><div class="message user"><div class="message-content"><div class="avatar user">Tú</div><div class="message-text ">35</div></div></div><div class="message assistant"><div class="message-content"><div class="avatar assistant">AI</div><div class="message-text ">¿Sueles visitar tiendas de repostería, participar en talleres de pastelería o asistir a eventos gastronómicos?</div></div></div><div class="message user"><div class="message-content"><div class="avatar user">Tú</div><div class="message-text ">mucho</div></div></div><div class="message assistant"><div class="message-content"><div class="avatar assistant">AI</div><div class="message-text gallery">Perfecto, Patricio. El estudio está por comenzar. 
+
+Te voy a mostrar tres imágenes de tortas y te haré algunas preguntas sobre lo que ves y tus preferencias. No lleva mucho tiempo. 
+
+Aquí van las imágenes:
+- Torta recién hecha: <br><img src="./Think Nube - Entrevista AI88_files/uc" style="max-width: 200px; border-radius: 8px; margin: 8px 0px; display: none;" onerror="this.onerror=null; this.style.display=&#39;none&#39;;" alt="Imagen">
+- Torta más elaborada: <br><img src="./Think Nube - Entrevista AI88_files/uc(1)" style="max-width: 200px; border-radius: 8px; margin: 8px 0px; display: none;" onerror="this.onerror=null; this.style.display=&#39;none&#39;;" alt="Imagen">
+- Torta sencilla: <br><img src="./Think Nube - Entrevista AI88_files/uc(2)" style="max-width: 200px; border-radius: 8px; margin: 8px 0px; display: none;" onerror="this.onerror=null; this.style.display=&#39;none&#39;;" alt="Imagen">
+
+Primera pregunta: 
+En una escala del 1 al 5, ¿cuán atractiva considerás la presentación de cada una de estas tortas? (Podés responder con un número para cada foto, en el orden que prefieras.)</div></div></div></div>
 
     <div class="typing-indicator" id="typingIndicator" style="display: none;">
       <div class="message-content">
@@ -219,34 +231,63 @@
       }
       return url;
     }
+    
+function addMessage(text, isUser=false, isError=false) {
+  if (welcomeScreen) welcomeScreen.classList.add('hide-welcome');
+  
+  const messageDiv = document.createElement('div');
+  const avatarText = isUser ? 'Tú' : (isError ? '⚠️' : 'AI');
+  const avatarClass = isUser ? 'user' : (isError ? 'error' : 'assistant');
+  let displayText = text;
 
-    function addMessage(message) {
-  try {
-    const parsed = JSON.parse(message);
-    let displayText = parsed.output || message;
+  try { 
+    const parsed = JSON.parse(text); 
+    displayText = parsed.output || parsed.text || parsed.message || text; 
+  } catch {}
 
-    // 🔧 Reemplazar links directos a imágenes (jpg, jpeg, png, gif)
-    displayText = displayText.replace(
-      /(https?:\/\/[^\s]+?\.(jpg|jpeg|png|gif))/gi,
-      (url) => `<br><img src="${url}" style="max-width:200px; border-radius:8px; margin:8px 0;" alt="Imagen" />`
-    );
-
-    // 🔧 Reemplazar también Google Drive en formato uc?export=view&id
-    displayText = displayText.replace(
-      /(https:\/\/drive\.google\.com\/uc\?export=view&id=[a-zA-Z0-9_-]+)/g,
-      (url) => `<br><img src="${url}" style="max-width:200px; border-radius:8px; margin:8px 0;" alt="Imagen de Google Drive" />`
-    );
-
-    const chatDiv = document.getElementById('chat');
-    const msg = document.createElement('div');
-    msg.classList.add('message', 'ai');
-    msg.innerHTML = displayText;
-    chatDiv.appendChild(msg);
-    chatDiv.scrollTop = chatDiv.scrollHeight;
-  } catch (e) {
-    console.error("Error al agregar mensaje:", e, message);
+  // Solo procesar links si no viene ya con <img>
+  if (!displayText.includes("<img")) {
+    const urlRegex = /(https:\/\/[^\s<>"']+)/g;
+    displayText = displayText.replace(urlRegex, (url) => {
+      let cleanUrl = url.replace(/[),;.!?]+$/, ''); // limpia caracteres sueltos
+      
+      // Si es imagen (jpg, jpeg, png, gif, webp, bmp, svg) → mostrar como <img>
+      if (cleanUrl.match(/\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i)) {
+        return `<br><img src="${cleanUrl}" style="max-width:200px; border-radius:8px; margin:8px 0;" 
+                 onerror="this.onerror=null; this.style.display='none';" alt="Imagen" />`;
+      }
+      
+      // Si no es imagen, dejar link clickeable
+      return `<a href="${cleanUrl}" target="_blank">${cleanUrl}</a>`;
+    });
   }
+
+  // Detectar si hay varias imágenes → aplicar grid
+  const isGallery = (displayText.match(/<img/g) || []).length > 1;
+  const galleryClass = isGallery ? "gallery" : "";
+
+  messageDiv.className = `message ${avatarClass}`;
+  messageDiv.innerHTML = `
+    <div class="message-content">
+      <div class="avatar ${avatarClass}">${avatarText}</div>
+      <div class="message-text ${galleryClass}">${displayText}</div>
+    </div>`;
+
+  messagesContainer.appendChild(messageDiv);
+  messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+  // Eventos para imágenes (scroll + click)
+  const images = messageDiv.querySelectorAll('img');
+  images.forEach(img => {
+    img.addEventListener('load', () => {
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    });
+    img.addEventListener('click', () => {
+      window.open(img.src, '_blank');
+    });
+  });
 }
+    
     function showTypingIndicator(){ 
       typingIndicator.style.display='block'; 
       messagesContainer.scrollTop=messagesContainer.scrollHeight; 
@@ -325,5 +366,6 @@
       },3000);
     });
   </script>
-</body>
-</html>
+
+
+</body></html>
