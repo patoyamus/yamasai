@@ -221,58 +221,65 @@
     }
 
     function addMessage(text, isUser=false, isError=false) {
-      if (welcomeScreen) welcomeScreen.classList.add('hide-welcome');
+  if (welcomeScreen) welcomeScreen.classList.add('hide-welcome');
+  
+  const messageDiv = document.createElement('div');
+  const avatarText = isUser ? 'Tú' : (isError ? '⚠️' : 'AI');
+  const avatarClass = isUser ? 'user' : (isError ? 'error' : 'assistant');
+  let displayText = text;
+
+  try { 
+    const parsed = JSON.parse(text); 
+    displayText = parsed.output || parsed.text || parsed.message || text; 
+  } catch {}
+
+  // Procesar URLs para convertirlas en imágenes
+  if (!displayText.includes("<img")) {
+    // Regex mejorado para capturar todas las URLs
+    const urlRegex = /(https?:\/\/[^\s\n]+)/g;
+    displayText = displayText.replace(urlRegex, (url) => {
+      // Limpiar la URL de caracteres extra
+      let cleanUrl = url.replace(/[),;.!?]+$/, '');
       
-      const messageDiv = document.createElement('div');
-      const avatarText = isUser ? 'Tú' : (isError ? '⚠️' : 'AI');
-      const avatarClass = isUser ? 'user' : (isError ? 'error' : 'assistant');
-      let displayText = text;
-
-      try { 
-        const parsed = JSON.parse(text); 
-        displayText = parsed.output || parsed.text || parsed.message || text; 
-      } catch {}
-
-      // Solo procesar links si no viene ya con <img>
-      if (!displayText.includes("<img")) {
-        const urlRegex = /(https:\/\/[^\s<>"']+)/g;
-        displayText = displayText.replace(urlRegex, (url) => {
-          // Limpiar la URL
-          let cleanUrl = url.replace(/[),;.!?]+$/, '');
-          
-          if (cleanUrl.includes("drive.google.com")) {
-            const imageUrl = convertGoogleDriveUrl(cleanUrl);
-            return `<br><img src="${imageUrl}" style="max-width:200px; border-radius:8px; margin:8px 0;" onerror="this.onerror=null; this.style.display='none';" alt="Imagen" />`;
-          } else if (cleanUrl.match(/\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i)) {
-            return `<br><img src="${cleanUrl}" style="max-width:200px; border-radius:8px; margin:8px 0;" onerror="this.onerror=null; this.style.display='none';" alt="Imagen" />`;
-          }
-          return `<a href="${cleanUrl}" target="_blank">${cleanUrl}</a>`;
-        });
+      // Detectar cualquier URL de Google Drive (incluyendo las que ya están en formato correcto)
+      if (cleanUrl.includes("drive.google.com")) {
+        return `<br><img src="${cleanUrl}" style="max-width:200px; border-radius:8px; margin:8px 0;" onerror="this.onerror=null; this.style.display='none'; console.log('Error cargando imagen:', this.src);" alt="Imagen de Google Drive" />`;
+      } 
+      // Detectar URLs directas de imágenes
+      else if (cleanUrl.match(/\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i)) {
+        return `<br><img src="${cleanUrl}" style="max-width:200px; border-radius:8px; margin:8px 0;" onerror="this.onerror=null; this.style.display='none';" alt="Imagen" />`;
       }
+      return `<a href="${cleanUrl}" target="_blank">${cleanUrl}</a>`;
+    });
+  }
 
-      // Detectar si hay varias imágenes para aplicar grid
-      const isGallery = (displayText.match(/<img/g) || []).length > 1;
-      const galleryClass = isGallery ? "gallery" : "";
+  // Detectar si hay varias imágenes para aplicar grid
+  const isGallery = (displayText.match(/<img/g) || []).length > 1;
+  const galleryClass = isGallery ? "gallery" : "";
 
-      messageDiv.className = `message ${avatarClass}`;
-      messageDiv.innerHTML = `<div class="message-content"><div class="avatar ${avatarClass}">${avatarText}</div><div class="message-text ${galleryClass}">${displayText}</div></div>`;
-      
-      messagesContainer.appendChild(messageDiv);
+  messageDiv.className = `message ${avatarClass}`;
+  messageDiv.innerHTML = `<div class="message-content"><div class="avatar ${avatarClass}">${avatarText}</div><div class="message-text ${galleryClass}">${displayText}</div></div>`;
+  
+  messagesContainer.appendChild(messageDiv);
+  messagesContainer.scrollTop = messagesContainer.scrollHeight;
+  
+  // Eventos para imágenes
+  const images = messageDiv.querySelectorAll('img');
+  images.forEach(img => {
+    img.addEventListener('load', () => {
       messagesContainer.scrollTop = messagesContainer.scrollHeight;
-      
-      // Lazy loading para imágenes
-      const images = messageDiv.querySelectorAll('img');
-      images.forEach(img => {
-        img.addEventListener('load', () => {
-          messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        });
-        
-        // Agregar evento de click para ampliar imagen
-        img.addEventListener('click', () => {
-          window.open(img.src, '_blank');
-        });
-      });
-    }
+      console.log('Imagen cargada exitosamente:', img.src);
+    });
+    
+    img.addEventListener('error', () => {
+      console.log('Error cargando imagen:', img.src);
+    });
+    
+    img.addEventListener('click', () => {
+      window.open(img.src, '_blank');
+    });
+  });
+}
 
     function showTypingIndicator(){ 
       typingIndicator.style.display='block'; 
