@@ -388,7 +388,7 @@
           return;
         }
 
-        console.log('Login exitoso:', userData.contact_email);
+        console.log('Login exitoso:', userData.contacto_email);
         currentUser = userData;
         currentPassword = password;
         await loadData();
@@ -710,7 +710,7 @@
                   <div class="flex items-center space-x-3 px-4 py-2">
                     <img src="${currentUser.agenteimagen || 'https://i.ibb.co/5hqSHFd2/whasilogo.jpg'}" alt="Avatar" class="w-10 h-10 rounded-full object-cover">
                     <div class="flex-1 min-w-0">
-                      <p class="text-sm font-medium text-gray-900 truncate">${currentUser.agentenombre || currentUser.contact_email}</p>
+                      <p class="text-sm font-medium text-gray-900 truncate">${currentUser.agentenombre || currentUser.contacto_email}</p>
                       <button onclick="handleLogout()" class="text-xs text-blue-600 hover:text-blue-800">
                         Cerrar sesión
                       </button>
