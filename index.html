@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hola Whasi</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+    }
+    /* Estilos del chat Whasi */
+    .chat-container-n8n {
+      display: flex;
+      flex-direction: column;
+      height: calc(100vh - 200px);
+      background-color: #f9fafb;
+      border-radius: 0.5rem;
+      overflow: hidden;
+    }
+    .messages-container {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      scroll-behavior: smooth;
+    }
+    .message-bubble {
+      margin-bottom: 16px;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+    .message-bubble.user {
+      flex-direction: row-reverse;
+    }
+    .message-bubble .avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 12px;
+      flex-shrink: 0;
+    }
+    .message-bubble.user .avatar {
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+      color: white;
+    }
+    .message-bubble.assistant .avatar {
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: white;
+    }
+    .message-bubble .text {
+      max-width: 70%;
+      padding: 12px 16px;
+      border-radius: 12px;
+      font-size: 14px;
+      line-height: 1.5;
+      white-space: pre-wrap;
+    }
+    .message-bubble.user .text {
+      background-color: #3b82f6;
+      color: white;
+    }
+    .message-bubble.assistant .text {
+      background-color: white;
+      color: #1f2937;
+      border: 1px solid #e5e7eb;
+    }
+    .message-bubble.error .text {
+      background-color: #fef2f2;
+      color: #dc2626;
+      border: 1px solid #fecaca;
+    }
+    .typing-indicator {
+      display: none;
+      padding: 12px 20px;
+    }
+    .typing-dots {
+      display: flex;
+      gap: 4px;
+    }
+    .typing-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: #9ca3af;
+      animation: typing 1.5s infinite ease-in-out;
+    }
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes typing {
+      0%, 60%, 100% { opacity: 0.3; transform: scale(0.8); }
+      30% { opacity: 1; transform: scale(1); }
+    }
+    .chat-input-area {
+      padding: 16px;
+      background-color: white;
+      border-top: 1px solid #e5e7eb;
+    }
+    .chat-input-container {
+      display: flex;
+      gap: 12px;
+    }
+    .chat-input {
+      flex: 1;
+      padding: 12px 16px;
+      border: 1px solid #d1d5db;
+      border-radius: 12px;
+      font-size: 14px;
+      outline: none;
+    }
+    .chat-input:focus {
+      border-color: #3b82f6;
+    }
+    .chat-send-btn {
+      padding: 12px 20px;
+      border-radius: 12px;
+      border: none;
+      background-color: #3b82f6;
+      color: white;
+      cursor: pointer;
+    }
+    .chat-send-btn:hover {
+      background-color: #2563eb;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="module">
+    const SUPABASE_URL = 'https://dngfwpibykkjcxjrmitn.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRuZ2Z3cGlieWtramN4anJtaXRuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE2MzI0MzUsImV4cCI6MjA1NzIwODQzNX0.dux_eaNywF9tHEtAxIaYDcwM6mXDbNcZJYQjLVez57Q';
+    const N8N_WEBHOOK_URL = 'https://agentsol.app.n8n.cloud/webhook/c74427f2-bb9c-44ad-b008-e2f342ba39ca/chat';
+
+    let currentUser = null;
+    let currentPassword = null;
+    let clientes = [];
+    let pedidos = [];
+    let activeTab = 'clientes';
+    let activeApp = 'dashboard';
+    let editingRow = null;
+    let chatMessages = [];
+
+    function formatDate(dateString) {
+      if (!dateString) return '-';
+      const date = new Date(dateString);
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const year = String(date.getFullYear()).slice(-2);
+      return `${day}-${month}-${year}`;
+    }
+
+    function exportToCSV() {
+      let data, filename, headers;
+      
+      if (activeTab === 'clientes') {
+        data = clientes;
+        filename = 'clientes.csv';
+        headers = ['Nombre', 'Teléfono', 'Email'];
+        const csvContent = [
+          headers.join(','),
+          ...data.map(row => [
+            `"${row.nombre || ''}"`,
+            `"${row.tel || ''}"`,
+            `"${row.email || ''}"`
+          ].join(','))
+        ].join('\n');
+        downloadCSV(csvContent, filename);
+      } else {
+        data = pedidos;
+        filename = 'pedidos.csv';
+        headers = ['Nro de Pedido', 'Cliente', 'Producto', 'Precio', 'Fecha', 'Comentarios'];
+        const csvContent = [
+          headers.join(','),
+          ...data.map(row => [
+            `"${row.ID || ''}"`,
+            `"${row.cliente_nombre || ''}"`,
+            `"${row.pedido || ''}"`,
+            `"${row.monto || ''}"`,
+            `"${formatDate(row.created_at)}"`,
+            `"${row.comentarios || ''}"`
+          ].join(','))
+        ].join('\n');
+        downloadCSV(csvContent, filename);
+      }
+    }
+
+    function downloadCSV(content, filename) {
+      const blob = new Blob(['\ufeff' + content], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', filename);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    async function addRow() {
+      if (activeTab === 'clientes') {
+        const newRow = {
+          nombre: '',
+          tel: '',
+          email: '',
+          supa_account_id: currentUser.supa_account_id
+        };
+        clientes.unshift(newRow);
+      } else {
+        const newRow = {
+          ID: '',
+          cliente_nombre: '',
+          pedido: '',
+          monto: '',
+          created_at: new Date().toISOString(),
+          comentarios: '',
+          supa_account_id: currentUser.supa_account_id
+        };
+        pedidos.unshift(newRow);
+      }
+      renderDashboard();
+    }
+
+    async function saveRow(index) {
+      try {
+        if (activeTab === 'clientes') {
+          const cliente = clientes[index];
+          if (cliente.ID) {
+            await fetch(
+              `${SUPABASE_URL}/rest/v1/whasi_clientesdeclientes?ID=eq.${cliente.ID}`,
+              {
+                method: 'PATCH',
+                mode: 'cors',
+                credentials: 'omit',
+                headers: {
+                  'apikey': SUPABASE_KEY,
+                  'Authorization': `Bearer ${SUPABASE_KEY}`,
+                  'Content-Type': 'application/json',
+                  'Prefer': 'return=representation'
+                },
+                body: JSON.stringify({
+                  nombre: cliente.nombre,
+                  tel: cliente.tel,
+                  email: cliente.email
+                })
+              }
+            );
+          } else {
+            await fetch(
+              `${SUPABASE_URL}/rest/v1/whasi_clientesdeclientes`,
+              {
+                method: 'POST',
+                mode: 'cors',
+                credentials: 'omit',
+                headers: {
+                  'apikey': SUPABASE_KEY,
+                  'Authorization': `Bearer ${SUPABASE_KEY}`,
+                  'Content-Type': 'application/json',
+                  'Prefer': 'return=representation'
+                },
+                body: JSON.stringify(cliente)
+              }
+            );
+          }
+        } else {
+          const pedido = pedidos[index];
+          if (pedido.ID) {
+            await fetch(
+              `${SUPABASE_URL}/rest/v1/whasi_clientes_pedidos?ID=eq.${pedido.ID}`,
+              {
+                method: 'PATCH',
+                mode: 'cors',
+                credentials: 'omit',
+                headers: {
+                  'apikey': SUPABASE_KEY,
+                  'Authorization': `Bearer ${SUPABASE_KEY}`,
+                  'Content-Type': 'application/json',
+                  'Prefer': 'return=representation'
+                },
+                body: JSON.stringify({
+                  cliente_nombre: pedido.cliente_nombre,
+                  pedido: pedido.pedido,
+                  monto: pedido.monto,
+                  comentarios: pedido.comentarios
+                })
+              }
+            );
+          } else {
+            await fetch(
+              `${SUPABASE_URL}/rest/v1/whasi_clientes_pedidos`,
+              {
+                method: 'POST',
+                mode: 'cors',
+                credentials: 'omit',
+                headers: {
+                  'apikey': SUPABASE_KEY,
+                  'Authorization': `Bearer ${SUPABASE_KEY}`,
+                  'Content-Type': 'application/json',
+                  'Prefer': 'return=representation'
+                },
+                body: JSON.stringify(pedido)
+              }
+            );
+          }
+        }
+        
+        await loadData();
+        renderDashboard();
+      } catch (err) {
+        console.error('Error guardando:', err);
+        alert('Error al guardar los cambios');
+      }
+    }
+
+    function editRow(index) {
+      editingRow = index;
+      renderDashboard();
+    }
+
+    function cancelEdit() {
+      editingRow = null;
+      loadData().then(() => renderDashboard());
+    }
+
+    function updateValue(index, field, value) {
+      if (activeTab === 'clientes') {
+        clientes[index][field] = value;
+      } else {
+        pedidos[index][field] = value;
+      }
+    }
+
+    async function handleLogin() {
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const errorDiv = document.getElementById('error');
+      const button = document.querySelector('button[onclick="handleLogin()"]');
+
+      errorDiv.style.display = 'none';
+      button.disabled = true;
+      button.textContent = 'Iniciando sesión...';
+
+      try {
+        const allResponse = await fetch(
+          `${SUPABASE_URL}/rest/v1/whasi_clientes?select=*`,
+          {
+            method: 'GET',
+            mode: 'cors',
+            credentials: 'omit',
+            headers: {
+              'apikey': SUPABASE_KEY,
+              'Authorization': `Bearer ${SUPABASE_KEY}`,
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+              'Prefer': 'return=representation'
+            }
+          }
+        );
+
+        if (!allResponse.ok) {
+          const errorData = await allResponse.json();
+          console.error('Error de Supabase:', errorData);
+          errorDiv.textContent = 'Error al conectar con el servidor';
+          errorDiv.style.display = 'block';
+          button.disabled = false;
+          button.textContent = 'Iniciar sesión';
+          return;
+        }
+
+        const allData = await allResponse.json();
+        console.log('Datos recibidos:', allData.length, 'usuarios');
+        
+        const userData = allData.find(u => {
+          const userEmail = u.contact_email || u.email || u.correo || u.contacto_email || '';
+          return userEmail === email && u.password === password;
+        });
+
+        if (!userData) {
+          errorDiv.textContent = 'Usuario o contraseña incorrectos';
+          errorDiv.style.display = 'block';
+          button.disabled = false;
+          button.textContent = 'Iniciar sesión';
+          return;
+        }
+
+        console.log('Login exitoso:', userData.contact_email);
+        currentUser = userData;
+        currentPassword = password;
+        await loadData();
+        renderDashboard();
+      } catch (err) {
+        console.error('Error en login:', err);
+        errorDiv.textContent = 'Error al iniciar sesión: ' + err.message;
+        errorDiv.style.display = 'block';
+        button.disabled = false;
+        button.textContent = 'Iniciar sesión';
+      }
+    }
+
+    async function loadData() {
+      try {
+        const clientesResponse = await fetch(
+          `${SUPABASE_URL}/rest/v1/whasi_clientesdeclientes?supa_account_id=eq.${currentUser.supa_account_id}&select=*`,
+          {
+            method: 'GET',
+            mode: 'cors',
+            credentials: 'omit',
+            headers: {
+              'apikey': SUPABASE_KEY,
+              'Authorization': `Bearer ${SUPABASE_KEY}`,
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+        
+        const pedidosResponse = await fetch(
+          `${SUPABASE_URL}/rest/v1/whasi_clientes_pedidos?supa_account_id=eq.${currentUser.supa_account_id}&select=*`,
+          {
+            method: 'GET',
+            mode: 'cors',
+            credentials: 'omit',
+            headers: {
+              'apikey': SUPABASE_KEY,
+              'Authorization': `Bearer ${SUPABASE_KEY}`,
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+        
+        const clientesData = await clientesResponse.json();
+        const pedidosData = await pedidosResponse.json();
+        
+        clientes = Array.isArray(clientesData) ? clientesData : [];
+        pedidos = Array.isArray(pedidosData) ? pedidosData : [];
+      } catch (err) {
+        console.error('Error cargando datos:', err);
+      }
+    }
+
+    function handleLogout() {
+      currentUser = null;
+      currentPassword = null;
+      clientes = [];
+      pedidos = [];
+      activeTab = 'clientes';
+      activeApp = 'dashboard';
+      chatMessages = [];
+      renderLogin();
+    }
+
+    function setActiveTab(tab) {
+      activeTab = tab;
+      activeApp = 'dashboard';
+      editingRow = null;
+      renderDashboard();
+    }
+
+    function setActiveApp(app) {
+      activeApp = app;
+      editingRow = null;
+      renderDashboard();
+      
+      if (app === 'whasi') {
+        setTimeout(() => {
+          initWhasiChat();
+        }, 100);
+      }
+    }
+
+    // Funciones del chat Whasi
+    function initWhasiChat() {
+      const messagesContainer = document.getElementById('whasiMessages');
+      const messageInput = document.getElementById('whasiInput');
+      const sendButton = document.getElementById('whasiSendBtn');
+      
+      if (!messagesContainer || !messageInput || !sendButton) return;
+      
+      renderChatMessages();
+      
+      sendButton.onclick = sendWhasiMessage;
+      messageInput.onkeypress = (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          sendWhasiMessage();
+        }
+      };
+    }
+
+    function renderChatMessages() {
+      const messagesContainer = document.getElementById('whasiMessages');
+      if (!messagesContainer) return;
+      
+      messagesContainer.innerHTML = chatMessages.map(msg => `
+        <div class="message-bubble ${msg.type}">
+          <div class="avatar">${msg.type === 'user' ? 'Tú' : 'AI'}</div>
+          <div class="text">${msg.text}</div>
+        </div>
+      `).join('');
+      
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    function addChatMessage(text, isUser = false, isError = false) {
+      let displayText = text;
+      
+      try {
+        const parsed = JSON.parse(text);
+        displayText = parsed.output || parsed.text || parsed.message || text;
+      } catch {}
+      
+      chatMessages.push({
+        type: isUser ? 'user' : (isError ? 'error' : 'assistant'),
+        text: displayText
+      });
+      
+      renderChatMessages();
+    }
+
+    function showTyping() {
+      const indicator = document.getElementById('whasiTyping');
+      if (indicator) indicator.style.display = 'flex';
+    }
+
+    function hideTyping() {
+      const indicator = document.getElementById('whasiTyping');
+      if (indicator) indicator.style.display = 'none';
+    }
+
+    async function sendWhasiMessage() {
+      const messageInput = document.getElementById('whasiInput');
+      const message = messageInput.value.trim();
+      
+      if (!message) return;
+      
+      addChatMessage(message, true);
+      messageInput.value = '';
+      
+      showTyping();
+      
+      try {
+        const response = await fetch(N8N_WEBHOOK_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            mensaje: message,
+            email: currentUser.contact_email,
+            password: currentPassword
+          })
+        });
+        
+        hideTyping();
+        
+        if (response.ok) {
+          const data = await response.text();
+          addChatMessage(data || 'Respuesta vacía del servidor');
+        } else {
+          throw new Error(`Error del servidor: ${response.status}`);
+        }
+      } catch (error) {
+        hideTyping();
+        addChatMessage(`Error de conexión: ${error.message}`, false, true);
+      }
+    }
+
+    function renderLogin() {
+      document.getElementById('root').innerHTML = `
+        <div class="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+          <div class="bg-white rounded-lg shadow-lg w-full max-w-md p-8">
+            <div class="flex justify-center mb-8">
+              <img src="https://i.ibb.co/5hqSHFd2/whasilogo.jpg" alt="Whasi Logo" class="w-16 h-16 rounded-lg object-cover">
+            </div>
+            
+            <h2 class="text-2xl font-bold text-gray-900 text-center mb-2">Hola Whasi</h2>
+            <p class="text-gray-600 text-center mb-8">Ingresá a tu panel</p>
+            
+            <div class="space-y-6">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                <input
+                  type="email"
+                  id="email"
+                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                  placeholder="tu@email.com"
+                />
+              </div>
+              
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Contraseña</label>
+                <input
+                  type="password"
+                  id="password"
+                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                  placeholder="••••••••"
+                />
+              </div>
+
+              <div id="error" style="display:none;" class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm"></div>
+              
+              <button
+                onclick="handleLogin()"
+                class="w-full bg-black text-white py-3 rounded-lg font-medium hover:bg-gray-800 transition-colors"
+              >
+                Iniciar sesión
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('password').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') handleLogin();
+      });
+      
+      document.getElementById('email').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') document.getElementById('password').focus();
+      });
+    }
+
+    function renderDashboard() {
+      const clientesRows = clientes.length === 0 ? `
+        <tr>
+          <td colspan="4" class="px-6 py-12 text-center text-gray-500">
+            No hay clientes registrados
+          </td>
+        </tr>
+      ` : clientes.map((cliente, idx) => {
+        const isEditing = editingRow === idx;
+        return `
+          <tr class="hover:bg-gray-50">
+            <td class="px-6 py-4 text-sm text-gray-900">
+              ${isEditing ? `<input type="text" value="${cliente.nombre || ''}" onchange="updateValue(${idx}, 'nombre', this.value)" class="w-full px-2 py-1 border rounded">` : (cliente.nombre || '-')}
+            </td>
+            <td class="px-6 py-4 text-sm text-gray-900">
+              ${isEditing ? `<input type="text" value="${cliente.tel || ''}" onchange="updateValue(${idx}, 'tel', this.value)" class="w-full px-2 py-1 border rounded">` : (cliente.tel || '-')}
+            </td>
+            <td class="px-6 py-4 text-sm text-gray-900">
+              ${isEditing ? `<input type="email" value="${cliente.email || ''}" onchange="updateValue(${idx}, 'email', this.value)" class="w-full px-2 py-1 border rounded">` : (cliente.email || '-')}
+            </td>
+            <td class="px-6 py-4 text-sm">
+              ${isEditing ? `
+                <button onclick="saveRow(${idx})" class="text-green-600 hover:text-green-800 mr-2">Guardar</button>
+                <button onclick="cancelEdit()" class="text-gray-600 hover:text-gray-800">Cancelar</button>
+              ` : `
+                <button onclick="editRow(${idx})" class="text-blue-600 hover:text-blue-800">Editar</button>
+              `}
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      const pedidosRows = pedidos.length === 0 ? `
+        <tr>
+          <td colspan="7" class="px-6 py-12 text-center text-gray-500">
+            No hay pedidos registrados
+          </td>
+        </tr>
+      ` : pedidos.map((pedido, idx) => {
+        const isEditing = editingRow === idx;
+        return `
+          <tr class="hover:bg-gray-50">
+            <td class="px-6 py-4 text-sm text-gray-900">${pedido.ID || '-'}</td>
+            <td class="px-6 py-4 text-sm text-gray-900">
+              ${isEditing ? `<input type="text" value="${pedido.cliente_nombre || ''}" onchange="updateValue(${idx}, 'cliente_nombre', this.value)" class="w-full px-2 py-1 border rounded">` : (pedido.cliente_nombre || '-')}
+            </td>
+            <td class="px-6 py-4 text-sm text-gray-900">
+              ${isEditing ? `<input type="text" value="${pedido.pedido || ''}" onchange="updateValue(${idx}, 'pedido', this.value)" class="w-full px-2 py-1 border rounded">` : (pedido.pedido || '-')}
+            </td>
+            <td class="px-6 py-4 text-sm text-gray-900">
+              ${isEditing ? `<input type="text" value="${pedido.monto || ''}" onchange="updateValue(${idx}, 'monto', this.value)" class="w-full px-2 py-1 border rounded">` : (pedido.monto || '-')}
+            </td>
+            <td class="px-6 py-4 text-sm text-gray-900">${formatDate(pedido.created_at)}</td>
+            <td class="px-6 py-4 text-sm text-gray-900">
+              ${isEditing ? `<input type="text" value="${pedido.comentarios || ''}" onchange="updateValue(${idx}, 'comentarios', this.value)" class="w-full px-2 py-1 border rounded">` : (pedido.comentarios || '-')}
+            </td>
+            <td class="px-6 py-4 text-sm">
+              ${isEditing ? `
+                <button onclick="saveRow(${idx})" class="text-green-600 hover:text-green-800 mr-2">Guardar</button>
+                <button onclick="cancelEdit()" class="text-gray-600 hover:text-gray-800">Cancelar</button>
+              ` : `
+                <button onclick="editRow(${idx})" class="text-blue-600 hover:text-blue-800">Editar</button>
+              `}
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      document.getElementById('root').innerHTML = `
+        <div class="min-h-screen bg-gray-50">
+          <!-- Header -->
+          <header class="bg-white border-b border-gray-200">
+            <div class="px-6 py-4 flex items-center justify-between">
+              <div class="flex items-center space-x-3">
+                <img src="https://i.ibb.co/5hqSHFd2/whasilogo.jpg" alt="Whasi Logo" class="w-10 h-10 rounded-lg object-cover">
+                <span class="text-xl font-semibold text-gray-900">Hola Whasi</span>
+              </div>
+            </div>
+          </header>
+
+          <div class="flex">
+            <!-- Sidebar -->
+            <aside class="w-64 bg-white border-r border-gray-200 min-h-screen">
+              <nav class="p-4 space-y-1">
+                <!-- Usuario Section -->
+                <div class="mb-6 pb-4 border-b border-gray-200">
+                  <div class="flex items-center space-x-3 px-4 py-2">
+                    <img src="${currentUser.agenteimagen || 'https://i.ibb.co/5hqSHFd2/whasilogo.jpg'}" alt="Avatar" class="w-10 h-10 rounded-full object-cover">
+                    <div class="flex-1 min-w-0">
+                      <p class="text-sm font-medium text-gray-900 truncate">${currentUser.agentenombre || currentUser.contact_email}</p>
+                      <button onclick="handleLogout()" class="text-xs text-blue-600 hover:text-blue-800">
+                        Cerrar sesión
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Whasi Chat -->
+                <button
+                  onclick="setActiveApp('whasi')"
+                  class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
+                    activeApp === 'whasi' ? 'bg-blue-50 text-blue-600' : 'text-gray-700 hover:bg-gray-50'
+                  }"
+                >
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                  <span class="font-medium">Whasi</span>
+                </button>
+
+                <!-- Conversaciones -->
+                <button
+                  onclick="setActiveApp('chatwoot')"
+                  class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
+                    activeApp === 'chatwoot' ? 'bg-blue-50 text-blue-600' : 'text-gray-700 hover:bg-gray-50'
+                  }"
+                >
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                  </svg>
+                  <span class="font-medium">Conversaciones</span>
+                </button>
+                
+                <!-- Clientes -->
+                <button
+                  onclick="setActiveTab('clientes')"
+                  class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
+                    activeTab === 'clientes' && activeApp === 'dashboard' ? 'bg-blue-50 text-blue-600' : 'text-gray-700 hover:bg-gray-50'
+                  }"
+                >
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                  <span class="font-medium">Clientes</span>
+                </button>
+                
+                <!-- Pedidos -->
+                <button
+                  onclick="setActiveTab('pedidos')"
+                  class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
+                    activeTab === 'pedidos' && activeApp === 'dashboard' ? 'bg-blue-50 text-blue-600' : 'text-gray-700 hover:bg-gray-50'
+                  }"
+                >
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  <span class="font-medium">Pedidos</span>
+                </button>
+
+                <!-- Turnos (Deshabilitado) -->
+                <button
+                  disabled
+                  class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-400 cursor-not-allowed opacity-60"
+                >
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <span class="font-medium">Turnos</span>
+                </button>
+              </nav>
+            </aside>
+
+            <!-- Main Content -->
+            <main class="flex-1 p-8">
+              ${activeApp === 'whasi' ? `
+                <div class="h-full">
+                  <div class="mb-6">
+                    <h1 class="text-2xl font-bold text-gray-900">Whasi Chat</h1>
+                    <p class="text-gray-600 mt-1">Asistente inteligente de Whasi</p>
+                  </div>
+                  <div class="bg-white rounded-lg shadow overflow-hidden chat-container-n8n">
+                    <div class="messages-container" id="whasiMessages"></div>
+                    
+                    <div class="typing-indicator" id="whasiTyping">
+                      <div class="typing-dots">
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                      </div>
+                      <span style="color: #6b7280; font-size: 14px; margin-left: 8px;">Escribiendo...</span>
+                    </div>
+                    
+                    <div class="chat-input-area">
+                      <div class="chat-input-container">
+                        <input 
+                          type="text"
+                          class="chat-input" 
+                          id="whasiInput" 
+                          placeholder="Escribe tu mensaje..."
+                        />
+                        <button class="chat-send-btn" id="whasiSendBtn">
+                          Enviar
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ` : activeApp === 'chatwoot' ? `
+                <div class="h-full">
+                  <div class="mb-6">
+                    <h1 class="text-2xl font-bold text-gray-900">Conversaciones</h1>
+                    <p class="text-gray-600 mt-1">Gestiona tus chats con clientes</p>
+                  </div>
+                  <div class="bg-white rounded-lg shadow overflow-hidden" style="height: calc(100vh - 200px);">
+                    <iframe 
+                      id="chatwoot-iframe"
+                      src="https://chat.whasi.io/" 
+                      class="w-full h-full border-0"
+                      allow="clipboard-read; clipboard-write"
+                    ></iframe>
+                  </div>
+                </div>
+              ` : activeTab === 'clientes' ? `
+                <div>
+                  <div class="mb-6 flex justify-between items-center">
+                    <div>
+                      <h1 class="text-2xl font-bold text-gray-900">Clientes</h1>
+                      <p class="text-gray-600 mt-1">Lista de todos tus clientes</p>
+                    </div>
+                    <div class="space-x-2">
+                      <button onclick="addRow()" class="bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800">
+                        + Agregar Fila
+                      </button>
+                      <button onclick="exportToCSV()" class="bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800">
+                        📥 Exportar CSV
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <div class="bg-white rounded-lg shadow overflow-hidden">
+                    <table class="w-full">
+                      <thead class="bg-gray-50 border-b border-gray-200">
+                        <tr>
+                          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre</th>
+                          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Teléfono</th>
+                          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                        </tr>
+                      </thead>
+                      <tbody class="divide-y divide-gray-200">
+                        ${clientesRows}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ` : `
+                <div>
+                  <div class="mb-6 flex justify-between items-center">
+                    <div>
+                      <h1 class="text-2xl font-bold text-gray-900">Pedidos</h1>
+                      <p class="text-gray-600 mt-1">Lista de todos los pedidos</p>
+                    </div>
+                    <div class="space-x-2">
+                      <button onclick="addRow()" class="bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800">
+                        + Agregar Fila
+                      </button>
+                      <button onclick="exportToCSV()" class="bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800">
+                        📥 Exportar CSV
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <div class="bg-white rounded-lg shadow overflow-hidden">
+                    <table class="w-full">
+                      <thead class="bg-gray-50 border-b border-gray-200">
+                        <tr>
+                          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nro de Pedido</th>
+                          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cliente</th>
+                          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Producto</th>
+                          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Precio</th>
+                          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
+                          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Comentarios</th>
+                          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                        </tr>
+                      </thead>
+                      <tbody class="divide-y divide-gray-200">
+                        ${pedidosRows}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              `}
+            </main>
+          </div>
+        </div>
+      `;
+    }
+
+    // Exponer funciones al scope global
+    window.handleLogin = handleLogin;
+    window.handleLogout = handleLogout;
+    window.setActiveTab = setActiveTab;
+    window.setActiveApp = setActiveApp;
+    window.exportToCSV = exportToCSV;
+    window.addRow = addRow;
+    window.editRow = editRow;
+    window.saveRow = saveRow;
+    window.cancelEdit = cancelEdit;
+    window.updateValue = updateValue;
+    window.sendWhasiMessage = sendWhasiMessage;
+
+    // Inicializar app
+    renderLogin();
+  </script>
+</body>
+</html>
